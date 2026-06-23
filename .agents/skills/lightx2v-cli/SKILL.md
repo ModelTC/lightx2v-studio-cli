@@ -4,29 +4,25 @@ description: "Run LightX2V AI generation tasks from the command line via OpenAPI
 allowed-tools: Bash(lightx2v *)
 ---
 
-> **Install the lightx2v CLI skill:** `npx skills add ModelTC/lightx2v-studio-cli@lightx2v-cli`
+> **Install skill:** `npx skills add ModelTC/lightx2v-studio-cli@lightx2v-cli`
 >
-> **Install the lightx2v CLI:** `curl -fsSL https://raw.githubusercontent.com/ModelTC/lightx2v-studio-cli/main/install.sh | sh`
+> **Install CLI:** `curl -fsSL https://raw.githubusercontent.com/ModelTC/lightx2v-studio-cli/main/install.sh | sh`
+>
+> **Skills directory:** https://skills.sh/ModelTC/lightx2v-studio-cli
 
 # LightX2V CLI
 
 Submit and download AI generation tasks via the LightX2V OpenAPI.
 
-**Online API docs**: https://x2v.light-ai.top/api-docs
+**Online API docs:** https://x2v.light-ai.top/api-docs
 
 ## Quick Start
 
 ```bash
-# Install CLI (once)
 curl -fsSL https://raw.githubusercontent.com/ModelTC/lightx2v-studio-cli/main/install.sh | sh
-
 lightx2v login
 lightx2v models
-
-lightx2v run t2i/Qwen-Image-2512 \
-  --prompt "a cute cat" \
-  --shape 512,512 \
-  -o out.png
+lightx2v run t2i/Qwen-Image-2512 --prompt "a cute cat" --shape 512,512 -o out.png
 ```
 
 ## Commands
@@ -42,7 +38,7 @@ lightx2v run t2i/Qwen-Image-2512 \
 | `lightx2v resume <task_id>` | Resume failed/cancelled task |
 | `lightx2v delete <task_id>` | Delete finished task |
 | `lightx2v result <task_id> [-o PATH]` | Get result URL / download |
-| `lightx2v completion bash\|zsh` | Shell completion script |
+| `lightx2v completion bash` or `zsh` | Shell completion script |
 
 ## `run` options
 
@@ -50,7 +46,7 @@ lightx2v run t2i/Qwen-Image-2512 \
 | --- | --- |
 | `--prompt` | Prompt text |
 | `--input JSON` or `--input @file.json` | Extra submit body fields |
-| `--image` / `--video` / `--audio` | Local file → base64 input |
+| `--image` / `--video` / `--audio` | Local file to base64 input |
 | `--shape H,W` | `custom_shape` e.g. `720,1280` |
 | `--aspect-ratio` | e.g. `16:9` |
 | `--duration SEC` | Seconds (t2av/i2av/s2v) |
@@ -66,38 +62,25 @@ lightx2v run t2i/Qwen-Image-2512 \
 ### Text-to-image
 
 ```bash
-lightx2v run t2i/Qwen-Image-2512 \
-  --prompt "watercolor portrait" \
-  --aspect-ratio 16:9 \
-  -o portrait.png
+lightx2v run t2i/Qwen-Image-2512 --prompt "watercolor portrait" --aspect-ratio 16:9 -o portrait.png
 ```
 
 ### Text-to-video
 
 ```bash
-lightx2v run t2v/Wan2.2_T2V_A14B_distilled \
-  --prompt "waves at sunset" \
-  --shape 720,1280 \
-  -o beach.mp4
+lightx2v run t2v/Wan2.2_T2V_A14B_distilled --prompt "waves at sunset" --shape 720,1280 -o beach.mp4
 ```
 
 ### Image-to-video
 
 ```bash
-lightx2v run i2v/Wan2.2_I2V_A14B_distilled \
-  --prompt "subject turns and smiles" \
-  --image ./ref.png \
-  -o animated.mp4
+lightx2v run i2v/Wan2.2_I2V_A14B_distilled --prompt "subject turns and smiles" --image ./ref.png -o animated.mp4
 ```
 
 ### Digital human (s2v)
 
 ```bash
-lightx2v run s2v/SekoTalk \
-  --prompt "natural speaking" \
-  --image ./portrait.png \
-  --audio ./speech.wav \
-  -o avatar.mp4
+lightx2v run s2v/SekoTalk --prompt "natural speaking" --image ./portrait.png --audio ./speech.wav -o avatar.mp4
 ```
 
 ### Task management
@@ -118,6 +101,7 @@ lightx2v result TASK_ID -o output.png
 
 ## Related
 
+- Skills directory: https://skills.sh/ModelTC/lightx2v-studio-cli
 - Skill repo: https://github.com/ModelTC/lightx2v-studio-cli
 - OpenAPI: https://x2v.light-ai.top/openapi.json
 - Platform: https://x2v.light-ai.top

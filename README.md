@@ -2,6 +2,8 @@
 
 Agent skills and install docs for the **LightX2V CLI** — submit, poll, and download AI image/video generation tasks via [x2v.light-ai.top](https://x2v.light-ai.top) OpenAPI.
 
+**Skills directory:** https://skills.sh/ModelTC/lightx2v-studio-cli
+
 ## Install the Agent skill
 
 ```bash
@@ -20,20 +22,15 @@ The skill teaches your agent how to use `lightx2v`. Install the binary separatel
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ModelTC/lightx2v-studio-cli/main/install.sh | sh
-```
-
-Or with pip (from [LightX2V-Deploy](https://github.com/ModelTC/LightX2V)):
-
-```bash
-pip install "lightx2v-cli @ git+https://github.com/ModelTC/LightX2V.git#subdirectory=LightX2V-Deploy"
-```
-
-Then:
-
-```bash
 lightx2v login
 lightx2v models
 lightx2v run t2i/Qwen-Image-2512 --prompt "a cute cat" --shape 512,512 -o out.png
+```
+
+Or with pip (from [LightX2V](https://github.com/ModelTC/LightX2V)):
+
+```bash
+pip install "git+https://github.com/ModelTC/LightX2V.git#subdirectory=LightX2V-Deploy"
 ```
 
 See [cli-install.md](./cli-install.md) for details.
@@ -43,15 +40,12 @@ See [cli-install.md](./cli-install.md) for details.
 ```bash
 export LIGHTX2V_BASE_URL="https://x2v.light-ai.top"
 export LIGHTX2V_API_KEY="apikey_xxxxxxxx"
-
-lightx2v run t2v/Wan2.2_T2V_A14B_distilled \
-  --prompt "waves at sunset" \
-  --shape 720,1280 \
-  -o beach.mp4
+lightx2v run t2v/Wan2.2_T2V_A14B_distilled --prompt "waves at sunset" --shape 720,1280 -o beach.mp4
 ```
 
 ## Links
 
+- Skills directory: https://skills.sh/ModelTC/lightx2v-studio-cli
 - Platform: https://x2v.light-ai.top
 - API docs: https://x2v.light-ai.top/api-docs
 - OpenAPI: https://x2v.light-ai.top/openapi.json
