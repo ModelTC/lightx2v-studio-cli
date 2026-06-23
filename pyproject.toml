@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lightx2v-cli"
+version = "0.1.0"
+description = "Command-line client for the LightX2V OpenAPI (video/image generation)"
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "ModelTC" }]
+keywords = ["lightx2v", "ai", "video", "image", "cli", "api"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    "httpx>=0.27",
+]
+
+[project.urls]
+Homepage = "https://x2v.light-ai.top"
+Documentation = "https://x2v.light-ai.top/api-docs"
+Repository = "https://github.com/ModelTC/lightx2v-studio-cli"
+Skills = "https://skills.sh/ModelTC/lightx2v-ai-video-generation"
+API = "https://x2v.light-ai.top/openapi.json"
+
+[project.scripts]
+lightx2v = "lightx2v.cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["lightx2v"]

@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install lightx2v CLI via pip from ModelTC/LightX2V (LightX2V-Deploy subdirectory).
+# Install lightx2v CLI from this repo (public, separate from LightX2V-Deploy).
 # Usage: curl -fsSL https://raw.githubusercontent.com/ModelTC/lightx2v-studio-cli/main/install.sh | sh
 
-REPO_URL="${LIGHTX2V_CLI_REPO:-https://github.com/ModelTC/LightX2V.git}"
-SUBDIR="${LIGHTX2V_CLI_SUBDIR:-LightX2V-Deploy}"
-PIP_SPEC="git+${REPO_URL}#subdirectory=${SUBDIR}"
+REPO_URL="${LIGHTX2V_CLI_REPO:-https://github.com/ModelTC/lightx2v-studio-cli.git}"
+PIP_SPEC="git+${REPO_URL}"
 
-echo "Installing lightx2v CLI from ${REPO_URL} (${SUBDIR})..."
+echo "Installing lightx2v CLI from ${REPO_URL}..."
 
 if command -v pipx >/dev/null 2>&1; then
   pipx install --force "${PIP_SPEC}" || pipx install --force "lightx2v-cli @ ${PIP_SPEC}"

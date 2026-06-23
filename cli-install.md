@@ -1,5 +1,7 @@
 # LightX2V CLI install
 
+The CLI is published from this repo. **LightX2V-Deploy is internal and not required.**
+
 ## Prerequisites
 
 - Python 3.10+
@@ -11,24 +13,24 @@
 curl -fsSL https://raw.githubusercontent.com/ModelTC/lightx2v-studio-cli/main/install.sh | sh
 ```
 
-## Option 2: pip from LightX2V monorepo
+## Option 2: pip from GitHub
 
 ```bash
 pip install --upgrade pip
-pip install "git+https://github.com/ModelTC/LightX2V.git#subdirectory=LightX2V-Deploy&egg=lightx2v-cli"
+pip install "git+https://github.com/ModelTC/lightx2v-studio-cli.git"
 ```
 
 With pipx (isolated env):
 
 ```bash
-pipx install "git+https://github.com/ModelTC/LightX2V.git#subdirectory=LightX2V-Deploy"
+pipx install "git+https://github.com/ModelTC/lightx2v-studio-cli.git"
 ```
 
 ## Option 3: local development
 
 ```bash
-git clone https://github.com/ModelTC/LightX2V.git
-cd LightX2V/LightX2V-Deploy
+git clone https://github.com/ModelTC/lightx2v-studio-cli.git
+cd lightx2v-studio-cli
 pip install -e .
 ```
 
