@@ -13,6 +13,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def handle(args: argparse.Namespace) -> int:
+    print("Get your API key at https://x2v.light-ai.top (profile menu → API Key).")
     api_key = getpass.getpass("API Key (apikey_...): ").strip()
     if not api_key:
         print("Error: API key is required.")
