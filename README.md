@@ -29,10 +29,10 @@ lightx2v run t2i/Qwen-Image-2512 --prompt "a cute cat" --shape 512,512 -o out.pn
 For Cursor / agent automation, install the skill from the separate repo:
 
 ```bash
-npx skills add ModelTC/lightx2v-ai-video-generation@lightx2v-ai-video-generation -g -y
+npx skills add ModelTC/LightX2V-Skills@lightx2v-ai-video-generation -g -y
 ```
 
-Skills repo: https://github.com/ModelTC/lightx2v-ai-video-generation
+Skills repo: https://github.com/ModelTC/LightX2V-Skills
 
 ## Links
 

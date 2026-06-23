@@ -30,7 +30,7 @@ dependencies = [
 Homepage = "https://x2v.light-ai.top"
 Documentation = "https://x2v.light-ai.top/api-docs"
 Repository = "https://github.com/ModelTC/lightx2v-studio-cli"
-Skills = "https://skills.sh/ModelTC/lightx2v-ai-video-generation"
+Skills = "https://skills.sh/ModelTC/LightX2V-Skills"
 API = "https://x2v.light-ai.top/openapi.json"
 
 [project.scripts]
