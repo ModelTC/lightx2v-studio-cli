@@ -1,5 +1,7 @@
 # lightx2v-studio-cli
 
+[中文](README.zh-CN.md)
+
 Command-line client for **LightX2V** — submit, poll, and download AI image/video generation tasks via [x2v.light-ai.top](https://x2v.light-ai.top) OpenAPI.
 
 ## Install
