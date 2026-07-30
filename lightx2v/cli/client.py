@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -53,6 +54,20 @@ class LightX2VClient:
         assert last_error is not None
         raise last_error
 
+    def _request_bytes(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: dict | None = None,
+        params: dict | None = None,
+        timeout: float | None = None,
+    ) -> tuple[bytes, str]:
+        response = self._client.request(method, path, json=json, params=params, timeout=timeout)
+        if not response.is_success:
+            raise self._parse_error(response)
+        return response.content, response.headers.get("content-type", "")
+
     @staticmethod
     def _parse_error(response: httpx.Response) -> ApiError:
         message = response.text
@@ -60,6 +75,8 @@ class LightX2VClient:
             payload = response.json()
             if isinstance(payload, dict) and payload.get("message"):
                 message = str(payload["message"])
+            elif isinstance(payload, dict) and payload.get("error"):
+                message = str(payload["error"])
         except Exception:
             pass
         return ApiError(response.status_code, message)
@@ -105,3 +122,77 @@ class LightX2VClient:
         if not response.is_success:
             raise ApiError(response.status_code, response.text)
         return response.content
+
+    def list_voices(self, *, version: str = "all", fields: str = "card") -> dict:
+        return self._request("GET", "/api/v1/voices/list", params={"version": version, "fields": fields})
+
+    def generate_tts(self, body: dict) -> tuple[bytes, str]:
+        return self._request_bytes("POST", "/api/v1/tts/generate", json=body, timeout=180.0)
+
+    def create_voice_clone(self, audio_path: str | Path, *, text: str = "") -> dict:
+        path = Path(audio_path)
+        with path.open("rb") as audio, httpx.Client(
+            base_url=self.config.base_url,
+            timeout=240.0,
+            headers={
+                "Authorization": f"Bearer {self.config.api_key}",
+                "Accept": "application/json",
+            },
+        ) as multipart_client:
+            files = {"file": (path.name, audio, "application/octet-stream")}
+            data = {"text": text} if text else None
+            response = multipart_client.post(
+                "/api/v1/voice/clone",
+                files=files,
+                data=data,
+            )
+        if response.is_success:
+            return response.json()
+        raise self._parse_error(response)
+
+    def save_voice_clone(self, speaker_id: str, name: str) -> dict:
+        return self._request("POST", "/api/v1/voice/clone/save", json={"speaker_id": speaker_id, "name": name})
+
+    def list_voice_clones(self) -> dict:
+        return self._request("GET", "/api/v1/voice/clone/list")
+
+    def generate_voice_clone_tts(self, body: dict) -> tuple[bytes, str]:
+        return self._request_bytes("POST", "/api/v1/voice/clone/tts", json=body, timeout=180.0)
+
+    def delete_voice_clone(self, speaker_id: str) -> dict:
+        return self._request("DELETE", f"/api/v1/voice/clone/{speaker_id}")
+
+    def list_workflows(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 10,
+        public: bool = False,
+        search: str | None = None,
+    ) -> dict:
+        params: dict[str, Any] = {
+            "page": page,
+            "page_size": page_size,
+            "public": "true" if public else "false",
+        }
+        if search:
+            params["search"] = search
+        return self._request("GET", "/api/v1/workflow/list", params=params)
+
+    def get_workflow(self, workflow_id: str) -> dict:
+        return self._request("GET", f"/api/v1/workflow/{workflow_id}")
+
+    def create_workflow(self, body: dict) -> dict:
+        return self._request("POST", "/api/v1/workflow/create", json=body)
+
+    def start_workflow_run(self, workflow_id: str, body: dict) -> dict:
+        return self._request("POST", f"/api/v1/workflow/{workflow_id}/runs", json=body)
+
+    def get_workflow_run(self, workflow_id: str, run_id: str) -> dict:
+        return self._request("GET", f"/api/v1/workflow/{workflow_id}/runs/{run_id}")
+
+    def get_workflow_run_outputs(self, workflow_id: str, run_id: str) -> dict:
+        return self._request("GET", f"/api/v1/workflow/{workflow_id}/runs/{run_id}/outputs")
+
+    def cancel_workflow_run(self, workflow_id: str, run_id: str) -> dict:
+        return self._request("POST", f"/api/v1/workflow/{workflow_id}/runs/{run_id}/cancel", json={})

@@ -13,6 +13,10 @@ from lightx2v.cli.commands import (
     result,
     resume,
     run,
+    tts,
+    voice_clone,
+    voices,
+    workflow,
 )
 
 
@@ -31,6 +35,10 @@ def build_parser() -> argparse.ArgumentParser:
     resume.add_parser(subparsers)
     delete.add_parser(subparsers)
     result.add_parser(subparsers)
+    voices.add_parser(subparsers)
+    tts.add_parser(subparsers)
+    voice_clone.add_parser(subparsers)
+    workflow.add_parser(subparsers)
     completion.add_parser(subparsers)
     return parser
 
