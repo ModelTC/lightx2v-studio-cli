@@ -19,7 +19,11 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     nested = parser.add_subparsers(dest="workflow_command", required=True)
 
     list_cmd = nested.add_parser("list", help="List workflows")
-    list_cmd.add_argument("--public", action="store_true", help="List public workflows instead of your own")
+    list_cmd.add_argument(
+        "--public",
+        action="store_true",
+        help="Legacy compatibility flag; API keys only list workflows owned by the account",
+    )
     list_cmd.add_argument("--search", help="Search keyword")
     list_cmd.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     list_cmd.add_argument("--page-size", type=int, default=10, help="Page size (default: 10)")
@@ -32,6 +36,15 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     add_json_flag(get)
     add_quiet_flag(get)
     get.set_defaults(handler=handle_get)
+
+    inputs = nested.add_parser("inputs", help="Describe inputs required for a workflow run")
+    inputs.add_argument("workflow_id", help="Workflow ID")
+    inputs.add_argument("--mode", choices=["full", "single", "downstream", "upstream"], default="full")
+    inputs.add_argument("--node-id", action="append", dest="node_ids", help="Node ID in the requested run scope; repeatable")
+    inputs.add_argument("--no-include-upstream", action="store_true", help="Do not include upstream dependencies")
+    add_json_flag(inputs)
+    add_quiet_flag(inputs)
+    inputs.set_defaults(handler=handle_inputs)
 
     create = nested.add_parser("create", help="Create a workflow from JSON")
     create.add_argument("--input", required=True, help="Workflow body JSON or @file.json")
@@ -54,12 +67,26 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     add_quiet_flag(run)
     run.set_defaults(handler=handle_run)
 
+    runs = nested.add_parser("runs", help="List runs for a workflow")
+    runs.add_argument("workflow_id", help="Workflow ID")
+    runs.add_argument("--status", choices=["running"], help="Only list active runs")
+    add_json_flag(runs)
+    add_quiet_flag(runs)
+    runs.set_defaults(handler=handle_runs)
+
     status = nested.add_parser("status", help="Get workflow run status")
     status.add_argument("workflow_id", help="Workflow ID")
     status.add_argument("run_id", help="Run ID")
     add_json_flag(status)
     add_quiet_flag(status)
     status.set_defaults(handler=handle_status)
+
+    stream = nested.add_parser("stream", help="Stream workflow run events over SSE")
+    stream.add_argument("workflow_id", help="Workflow ID")
+    stream.add_argument("run_id", help="Run ID")
+    add_json_flag(stream)
+    add_quiet_flag(stream)
+    stream.set_defaults(handler=handle_stream)
 
     outputs = nested.add_parser("outputs", help="Get workflow run final outputs")
     outputs.add_argument("workflow_id", help="Workflow ID")
@@ -74,6 +101,14 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     add_json_flag(cancel)
     add_quiet_flag(cancel)
     cancel.set_defaults(handler=handle_cancel)
+
+    cancel_node = nested.add_parser("cancel-node", help="Cancel one node and dependent downstream work")
+    cancel_node.add_argument("workflow_id", help="Workflow ID")
+    cancel_node.add_argument("run_id", help="Run ID")
+    cancel_node.add_argument("node_id", help="Node ID")
+    add_json_flag(cancel_node)
+    add_quiet_flag(cancel_node)
+    cancel_node.set_defaults(handler=handle_cancel_node)
 
 
 def _print(args: argparse.Namespace, console, payload: Any) -> None:
@@ -133,6 +168,20 @@ def handle_list(args: argparse.Namespace) -> int:
 def handle_get(args: argparse.Namespace) -> int:
     def _run(client, args, console):
         _print(args, console, client.get_workflow(args.workflow_id))
+        return 0
+
+    return with_client(args, _run)
+
+
+def handle_inputs(args: argparse.Namespace) -> int:
+    def _run(client, args, console):
+        data = client.get_workflow_inputs(
+            args.workflow_id,
+            mode=args.mode,
+            node_ids=args.node_ids,
+            include_upstream=not args.no_include_upstream,
+        )
+        _print(args, console, data)
         return 0
 
     return with_client(args, _run)
@@ -198,6 +247,26 @@ def handle_status(args: argparse.Namespace) -> int:
     return with_client(args, _run)
 
 
+def handle_runs(args: argparse.Namespace) -> int:
+    def _run(client, args, console):
+        _print(args, console, client.list_workflow_runs(args.workflow_id, status=args.status))
+        return 0
+
+    return with_client(args, _run)
+
+
+def handle_stream(args: argparse.Namespace) -> int:
+    def _run(client, args, console):
+        for event in client.stream_workflow_run(args.workflow_id, args.run_id):
+            if args.json:
+                print(json.dumps(event, ensure_ascii=False))
+            elif not args.quiet:
+                console.println(f"{event['event']}: {json.dumps(event['data'], ensure_ascii=False)}")
+        return 0
+
+    return with_client(args, _run)
+
+
 def handle_outputs(args: argparse.Namespace) -> int:
     def _run(client, args, console):
         _print(args, console, client.get_workflow_run_outputs(args.workflow_id, args.run_id))
@@ -209,6 +278,18 @@ def handle_outputs(args: argparse.Namespace) -> int:
 def handle_cancel(args: argparse.Namespace) -> int:
     def _run(client, args, console):
         _print(args, console, client.cancel_workflow_run(args.workflow_id, args.run_id))
+        return 0
+
+    return with_client(args, _run)
+
+
+def handle_cancel_node(args: argparse.Namespace) -> int:
+    def _run(client, args, console):
+        _print(
+            args,
+            console,
+            client.cancel_workflow_run_node(args.workflow_id, args.run_id, args.node_id),
+        )
         return 0
 
     return with_client(args, _run)

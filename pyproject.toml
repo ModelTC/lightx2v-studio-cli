@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lightx2v-cli"
-version = "0.1.0"
+version = "0.2.0"
 description = "Command-line client for the LightX2V OpenAPI (video/image generation)"
 requires-python = ">=3.10"
 readme = "README.md"

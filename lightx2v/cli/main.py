@@ -14,10 +14,12 @@ from lightx2v.cli.commands import (
     resume,
     run,
     tts,
+    update,
     voice_clone,
     voices,
     workflow,
 )
+from lightx2v import __version__
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="lightx2v",
         description="LightX2V CLI — submit and download AI generation tasks via OpenAPI",
     )
+    parser.add_argument("--version", action="version", version=f"lightx2v {__version__}")
     subparsers = parser.add_subparsers(dest="command", required=True)
     login.add_parser(subparsers)
     models.add_parser(subparsers)
@@ -39,6 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     tts.add_parser(subparsers)
     voice_clone.add_parser(subparsers)
     workflow.add_parser(subparsers)
+    update.add_parser(subparsers)
     completion.add_parser(subparsers)
     return parser
 

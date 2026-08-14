@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import json
+import sys
 import time
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import httpx
 
+from lightx2v import __version__
 from lightx2v.cli.config import CliConfig
+from lightx2v.cli.update_check import UpdateChecker
 
 
 class ApiError(Exception):
@@ -17,8 +22,9 @@ class ApiError(Exception):
 
 
 class LightX2VClient:
-    def __init__(self, config: CliConfig, *, timeout: float = 120.0):
+    def __init__(self, config: CliConfig, *, timeout: float = 120.0, notify_updates: bool = True):
         self.config = config
+        self._update_checker = UpdateChecker(current_version=__version__, enabled=notify_updates)
         self._client = httpx.Client(
             base_url=config.base_url,
             timeout=timeout,
@@ -26,11 +32,15 @@ class LightX2VClient:
                 "Authorization": f"Bearer {config.api_key}",
                 "Content-Type": "application/json",
                 "Accept": "application/json",
+                "User-Agent": f"lightx2v-cli/{__version__}",
             },
         )
 
     def close(self) -> None:
         self._client.close()
+        notice = self._update_checker.consume_notice()
+        if notice:
+            print(f"\n{notice}", file=sys.stderr)
 
     def __enter__(self) -> LightX2VClient:
         return self
@@ -42,6 +52,7 @@ class LightX2VClient:
         last_error: ApiError | None = None
         for attempt in range(5):
             response = self._client.request(method, path, json=json, params=params)
+            self._update_checker.observe_headers(response.headers)
             if response.status_code == 429 and attempt < 4:
                 time.sleep(0.05 * (attempt + 1))
                 continue
@@ -64,6 +75,7 @@ class LightX2VClient:
         timeout: float | None = None,
     ) -> tuple[bytes, str]:
         response = self._client.request(method, path, json=json, params=params, timeout=timeout)
+        self._update_checker.observe_headers(response.headers)
         if not response.is_success:
             raise self._parse_error(response)
         return response.content, response.headers.get("content-type", "")
@@ -119,6 +131,7 @@ class LightX2VClient:
 
     def download(self, url: str) -> bytes:
         response = self._client.get(url, follow_redirects=True)
+        self._update_checker.observe_headers(response.headers)
         if not response.is_success:
             raise ApiError(response.status_code, response.text)
         return response.content
@@ -137,6 +150,7 @@ class LightX2VClient:
             headers={
                 "Authorization": f"Bearer {self.config.api_key}",
                 "Accept": "application/json",
+                "User-Agent": f"lightx2v-cli/{__version__}",
             },
         ) as multipart_client:
             files = {"file": (path.name, audio, "application/octet-stream")}
@@ -146,6 +160,7 @@ class LightX2VClient:
                 files=files,
                 data=data,
             )
+        self._update_checker.observe_headers(response.headers)
         if response.is_success:
             return response.json()
         raise self._parse_error(response)
@@ -182,11 +197,31 @@ class LightX2VClient:
     def get_workflow(self, workflow_id: str) -> dict:
         return self._request("GET", f"/api/v1/workflow/{workflow_id}")
 
+    def get_workflow_inputs(
+        self,
+        workflow_id: str,
+        *,
+        mode: str = "full",
+        node_ids: list[str] | None = None,
+        include_upstream: bool = True,
+    ) -> dict:
+        params: dict[str, Any] = {
+            "mode": mode,
+            "include_upstream": "true" if include_upstream else "false",
+        }
+        if node_ids:
+            params["node_ids"] = ",".join(node_ids)
+        return self._request("GET", f"/api/v1/workflow/{workflow_id}/inputs", params=params)
+
     def create_workflow(self, body: dict) -> dict:
         return self._request("POST", "/api/v1/workflow/create", json=body)
 
     def start_workflow_run(self, workflow_id: str, body: dict) -> dict:
         return self._request("POST", f"/api/v1/workflow/{workflow_id}/runs", json=body)
+
+    def list_workflow_runs(self, workflow_id: str, *, status: str | None = None) -> dict:
+        params = {"status": status} if status else None
+        return self._request("GET", f"/api/v1/workflow/{workflow_id}/runs", params=params)
 
     def get_workflow_run(self, workflow_id: str, run_id: str) -> dict:
         return self._request("GET", f"/api/v1/workflow/{workflow_id}/runs/{run_id}")
@@ -194,5 +229,47 @@ class LightX2VClient:
     def get_workflow_run_outputs(self, workflow_id: str, run_id: str) -> dict:
         return self._request("GET", f"/api/v1/workflow/{workflow_id}/runs/{run_id}/outputs")
 
+    def stream_workflow_run(self, workflow_id: str, run_id: str) -> Iterator[dict[str, Any]]:
+        path = f"/api/v1/workflow/{workflow_id}/runs/{run_id}/stream"
+        with self._client.stream("GET", path, headers={"Accept": "text/event-stream"}) as response:
+            self._update_checker.observe_headers(response.headers)
+            if not response.is_success:
+                response.read()
+                raise self._parse_error(response)
+
+            event_name = "message"
+            data_lines: list[str] = []
+            for line in response.iter_lines():
+                if line == "":
+                    if data_lines:
+                        raw = "\n".join(data_lines)
+                        try:
+                            data: Any = json.loads(raw)
+                        except json.JSONDecodeError:
+                            data = raw
+                        yield {"event": event_name, "data": data}
+                    event_name = "message"
+                    data_lines = []
+                    continue
+                if line.startswith("event:"):
+                    event_name = line[6:].strip() or "message"
+                elif line.startswith("data:"):
+                    data_lines.append(line[5:].lstrip())
+
+            if data_lines:
+                raw = "\n".join(data_lines)
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = raw
+                yield {"event": event_name, "data": data}
+
     def cancel_workflow_run(self, workflow_id: str, run_id: str) -> dict:
         return self._request("POST", f"/api/v1/workflow/{workflow_id}/runs/{run_id}/cancel", json={})
+
+    def cancel_workflow_run_node(self, workflow_id: str, run_id: str, node_id: str) -> dict:
+        return self._request(
+            "POST",
+            f"/api/v1/workflow/{workflow_id}/runs/{run_id}/cancel-node",
+            json={"node_id": node_id},
+        )

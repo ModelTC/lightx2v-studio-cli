@@ -21,7 +21,10 @@ def with_client(
         return 1
     console = CliConsole(json_mode=getattr(args, "json", False), quiet=getattr(args, "quiet", False))
     try:
-        with LightX2VClient(config) as client:
+        with LightX2VClient(
+            config,
+            notify_updates=not getattr(args, "json", False) and not getattr(args, "quiet", False),
+        ) as client:
             return fn(client, args, console)
     except ApiError as exc:
         if console.json_mode:

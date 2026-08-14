@@ -90,7 +90,7 @@ def handle(args: argparse.Namespace) -> int:
 
     task = body["task"]
     try:
-        with LightX2VClient(config) as client:
+        with LightX2VClient(config, notify_updates=not args.json and not args.quiet) as client:
             if args.quote:
                 quote = client.quote(body)
                 credits = quote.get("quoted_credits")

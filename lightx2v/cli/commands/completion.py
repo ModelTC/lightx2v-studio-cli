@@ -13,10 +13,12 @@ _SUBCOMMANDS = [
     "resume",
     "delete",
     "result",
+    "workflow",
+    "update",
     "completion",
 ]
 
-_TASK_TYPES = ["s2v", "t2v", "i2v", "flf2v", "t2av", "i2av", "vsr", "animate", "t2i", "i2i"]
+_TASK_TYPES = ["s2v", "t2v", "i2v", "flf2v", "t2av", "i2av", "ref2av", "vsr", "animate", "t2i", "i2i"]
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -42,7 +44,7 @@ _lightx2v_completions() {{
       if [[ "$cur" == *"/"* ]] || [[ "$prev" == "run" ]]; then
         COMPREPLY=( $(compgen -W "{' '.join(f'{t}/' for t in _TASK_TYPES)}" -- "$cur") )
       fi
-      COMPREPLY+=( $(compgen -W "--input --prompt --image --video --audio --shape --aspect-ratio --duration --vsr-preset --vsr-input-slot -o --quote --json -q" -- "$cur") )
+      COMPREPLY+=( $(compgen -W "--input --prompt --image --video --audio --shape --resolution-level --aspect-ratio --duration --vsr-preset --vsr-input-slot -o --quote --json -q" -- "$cur") )
       ;;
     list)
       COMPREPLY=( $(compgen -W "--status --page --page-size --json -q" -- "$cur") )
@@ -55,6 +57,13 @@ _lightx2v_completions() {{
       ;;
     login)
       COMPREPLY=( $(compgen -W "--base-url" -- "$cur") )
+      ;;
+    workflow)
+      if [[ ${{COMP_CWORD}} -eq 2 ]]; then
+        COMPREPLY=( $(compgen -W "list get inputs create run runs status stream outputs cancel cancel-node" -- "$cur") )
+      else
+        COMPREPLY=( $(compgen -W "--public --search --page --page-size --mode --node-id --no-include-upstream --inputs --input-file --save-as-default --poll --poll-interval --timeout --status --json -q" -- "$cur") )
+      fi
       ;;
     completion)
       COMPREPLY=( $(compgen -W "bash zsh" -- "$cur") )
@@ -80,6 +89,8 @@ _lightx2v() {{
     'resume:Resume task'
     'delete:Delete task'
     'result:Get result URL'
+    'workflow:List, run, and inspect workflows'
+    'update:Update the LightX2V CLI'
     'completion:Shell completion'
   )
   if (( CURRENT == 2 )); then
@@ -88,6 +99,11 @@ _lightx2v() {{
   fi
   case $words[2] in
     run) _arguments '*: :(t2i/Qwen-Image-2512 t2v/Wan2.2_T2V_A14B_distilled i2v/Wan2.2_I2V_A14B_distilled)' ;;
+    workflow)
+      if (( CURRENT == 3 )); then
+        _values 'workflow command' list get inputs create run runs status stream outputs cancel cancel-node
+      fi
+      ;;
     completion) _arguments '1: :(bash zsh)' ;;
   esac
 }}

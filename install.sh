@@ -21,7 +21,7 @@ else
 fi
 
 if command -v lightx2v >/dev/null 2>&1; then
-  echo "Installed: $(lightx2v --help 2>&1 | head -1 || true)"
+  echo "Installed: $(lightx2v --version 2>&1 || true)"
   echo "Run: lightx2v login"
 else
   echo "Install finished. Ensure ~/.local/bin is on your PATH, then run: lightx2v login"

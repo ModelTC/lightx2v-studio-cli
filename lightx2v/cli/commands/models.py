@@ -22,7 +22,7 @@ def handle(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        with LightX2VClient(config) as client:
+        with LightX2VClient(config, notify_updates=not args.json) as client:
             data = client.list_models()
     except ApiError as exc:
         print(f"Error [{exc.status_code}]: {exc.message}", file=sys.stderr)
