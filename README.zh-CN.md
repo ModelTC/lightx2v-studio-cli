@@ -2,9 +2,9 @@
 
 **把创作需求交给 Agent，也可以用终端精确控制每一步。**
 
-适用版本：CLI 0.3.3 · 内容更新：2026-11-27 · 文档修订：2026-11-27-r1
+适用版本：CLI 0.3.4 · 内容更新：2026-11-27 · 文档修订：2026-11-27-r2。命名说明：从 0.3.4 起统一使用 canvas；旧入口（workflow）和旧画布选择参数仅保留隐藏兼容，帮助、补全与示例均推荐 canvas。API 响应中的 workflow_id 仍是后端画布标识。
 
-> **新版发布前说明**：本教程按 0.3.3 完整能力编写。目前官方 GitHub 主分支仍为 0.2.0；浏览器授权和公共画布功能需要新版 CLI 与兼容服务共同支持。开发服务已完成非生成查询验证，公网公共画布自检入口尚未通过。正式使用前请先检查版本和 `doctor`；不要把成功安装旧版当作新版已可用。具体核验范围见文末。
+> **新版发布前说明**：本教程按 0.3.4 完整能力编写。目前官方 GitHub 主分支仍为 0.2.0；浏览器授权和公共画布功能需要新版 CLI 与兼容服务共同支持。开发服务已完成非生成查询验证，公网公共画布自检入口尚未通过。正式使用前请先检查版本和 `doctor`；不要把成功安装旧版当作新版已可用。具体核验范围见文末。
 
 [平台](https://x2v.light-ai.top) · [CLI 仓库](https://github.com/ModelTC/lightx2v-studio-cli) · [API 文档](https://x2v.light-ai.top/api-docs) · [OpenAPI](https://x2v.light-ai.top/openapi.json) · [飞书教程](https://my.feishu.cn/wiki/P7e4wqY1uie5kAklYlncbxckn8b)
 
@@ -40,7 +40,7 @@ CLI 支持图片与视频任务、内置 TTS、音色克隆，以及兼容服务
 **两个生成入口要分清：**
 
 - `lightx2v run`：直接提交一个素材任务。它不等于在你指定的画布里创建节点。
-- `lightx2v workflow ...`：读取或编辑画布，再运行指定节点、编组或整张画布。想在网页继续调整项目，优先走这条路线。
+- `lightx2v canvas ...`：读取或编辑画布，再运行指定节点、编组或整张画布。想在网页继续调整项目，优先走这条路线。
 
 CLI 也不是本地视频剪辑软件。“生成片段”不自动等于“剪辑成片”；拼接、字幕、配乐混音和最终质检，需要 Agent 使用另行可用的工具完成，并说明使用了什么工具。
 
@@ -50,7 +50,7 @@ CLI 也不是本地视频剪辑软件。“生成片段”不自动等于“剪�
 
 准备一个能够运行终端命令的 Agent，以及可使用 LightX2V 的账户。把下面整段文字发给 Agent，**不要把这段自然语言粘贴到终端**。
 
-> 请帮我配置 LightX2V CLI。先阅读官方仓库 https://github.com/ModelTC/lightx2v-studio-cli 的当前安装说明，检查 Python 和已安装的 CLI 版本；不要重复安装。按官方来源安装或更新，确认版本支持本教程所需的 0.3.3 能力。可用时安装官方 lightx2v-ai-video-generation Skill。发起浏览器授权让我确认；如果你在远程或无界面环境，使用 headless 授权，只把授权网址和短码交给我，确认后在同一环境续查。不要读取、展示或把密钥写进聊天。连接后查询 models 和 doctor，分别报告素材生成、公共画布是否可用。先不要提交生成任务。如果公开安装包或服务还未支持新版，请明确告诉我缺少什么。
+> 请帮我配置 LightX2V CLI。先阅读官方仓库 https://github.com/ModelTC/lightx2v-studio-cli 的当前安装说明，检查 Python 和已安装的 CLI 版本；不要重复安装。按官方来源安装或更新，确认版本支持本教程所需的 0.3.4 能力。可用时安装官方 lightx2v-ai-video-generation Skill。发起浏览器授权让我确认；如果你在远程或无界面环境，使用 headless 授权，只把授权网址和短码交给我，确认后在同一环境续查。不要读取、展示或把密钥写进聊天。连接后查询 models 和 doctor，分别报告素材生成、公共画布是否可用。先不要提交生成任务。如果公开安装包或服务还未支持新版，请明确告诉我缺少什么。
 
 配置完成后，可以继续发：
 
@@ -74,7 +74,7 @@ lightx2v doctor --json
 
 | 步骤 | 预期结果 |
 | --- | --- |
-| 检查版本 | 输出当前版本；新版功能要求 0.3.3 |
+| 检查版本 | 输出当前版本；新版功能要求 0.3.4 |
 | 查看帮助 | 能看到需要使用的命令，而不是 `invalid choice` |
 | 登录 | 在网页完成授权，CLI 返回成功 |
 | 查询模型 | 返回账户可用的 `task` / `model_cls` |
@@ -95,7 +95,7 @@ lightx2v run t2i/Qwen-Image-2512 \
 
 ### 2.3 示例中的占位符怎么替换
 
-`WORKFLOW_ID`、`NODE_ID`、`RUN_ID`、`TASK_ID` 等大写名称是占位符，必须替换成真实回执中的值。`@inputs.json` 表示读取本地 JSON 文件；`@item_id` 在画布编辑 JSON 内表示引用同一批次先前创建的项目，两者含义不同。
+`CANVAS_ID`、`NODE_ID`、`RUN_ID`、`TASK_ID` 等大写名称是占位符，必须替换成真实回执中的值。`@inputs.json` 表示读取本地 JSON 文件；`@item_id` 在画布编辑 JSON 内表示引用同一批次先前创建的项目，两者含义不同。
 
 命令中不要写 `<NODE_ID>` 这样的尖括号：Shell 可能把它解释为文件重定向。Windows 用户使用 PowerShell 时，将多行 Bash 命令改写成单行；不要直接复制 Bash 的反斜杠续行或 heredoc。
 
@@ -217,7 +217,7 @@ lightx2v run --help
 
 目标写为 `task/model_cls`，不是网页显示名称。例如 `t2i/Qwen-Image-2512`。模型出现在其他人的教程中，不代表你的账户也能运行。
 
-`models` 提供模型目录；更详细的模型参数约束需查当前 API 文档 / OpenAPI，或在画布中查询 `workflow capabilities`。不要假设所有模型都接受同一画幅、分辨率、时长或参考数量。
+`models` 提供模型目录；更详细的模型参数约束需查当前 API 文档 / OpenAPI，或在画布中查询 `canvas capabilities`。不要假设所有模型都接受同一画幅、分辨率、时长或参考数量。
 
 | 参数 | 用途 |
 | --- | --- |
@@ -301,14 +301,14 @@ lightx2v run i2av/MiniMax-H3 \
 **粘贴到终端：先选择画布，再查询能力**
 
 ```bash
-lightx2v workflow use WORKFLOW_ID --json
-lightx2v workflow capabilities --tool-id audio-generation --json
+lightx2v canvas use CANVAS_ID --json
+lightx2v canvas capabilities --tool-id audio-generation --json
 ```
 
 将下面的 `MODEL_ID` 替换为当前能力返回的模型 ID，按模型约束补齐设置：
 
 ```bash
-lightx2v workflow node create --tool-id audio-generation \
+lightx2v canvas node create --tool-id audio-generation \
   --name "角色声音试听" \
   --parameters '{"model":"MODEL_ID"}' \
   --text-inputs '{"in-text":"普通话，克制温和的女声。只朗读：今天，我们从这里出发。干净单人声音。"}' \
@@ -359,7 +359,7 @@ lightx2v voice-clone tts --speaker-id SPEAKER_ID \
 
 ## 5. 任务管理与结果交付
 
-本章是直接素材任务；画布运行使用 `workflow status` 等命令，不能混用 ID。
+本章是直接素材任务；画布运行使用 `canvas status` 等命令，不能混用 ID。
 
 ```bash
 lightx2v query TASK_ID --json
@@ -388,27 +388,27 @@ lightx2v result TASK_ID -o ./output/recovered-result.png
 
 ```bash
 lightx2v doctor --json
-lightx2v workflow list --page-size 5 --json
-lightx2v workflow create --name "我的创作画布" \
+lightx2v canvas list --page-size 5 --json
+lightx2v canvas create --name "我的创作画布" \
   --operation-id canvas-001 --json
-lightx2v workflow use WORKFLOW_ID --json
-lightx2v workflow get WORKFLOW_ID --json
-lightx2v workflow capabilities --json
+lightx2v canvas use CANVAS_ID --json
+lightx2v canvas get CANVAS_ID --json
+lightx2v canvas capabilities --json
 ```
 
-把创建回执中的画布 ID 填入 `workflow use`。它保存当前项目的服务、账户和画布上下文；换目录或账户后，不要假设仍指向同一张画布。大多数新增便捷命令可以省略当前画布 ID，显式指定时可用 `--workflow-id`。
+把创建回执中的画布 ID 填入 `canvas use`。它保存当前项目的服务、账户和画布上下文；换目录或账户后，不要假设仍指向同一张画布。大多数新增便捷命令可以省略当前画布 ID，显式指定时可用 `--canvas-id`。
 
-`workflow create --name` 与旧式 `workflow create --input @workflow.json` 是不同入口：前者是公共创建及操作恢复流程；后者保留旧 JSON 建图语义，不要把二者的幂等保证混为一谈。
+`canvas create --name` 与旧式 `canvas create --input @workflow.json` 是不同入口：前者是公共创建及操作恢复流程；后者保留旧 JSON 建图语义，不要把二者的幂等保证混为一谈。
 
 ### 6.2 上传素材与创建节点
 
 ```bash
-lightx2v workflow upload --file ./product.png \
+lightx2v canvas upload --file ./product.png \
   --name "产品参考" --operation-id upload-product-001 --json
-lightx2v workflow node create --tool-id text-document \
+lightx2v canvas node create --tool-id text-document \
   --name "创作说明" --body "竖屏产品短片，先保存方案再生成。" \
   --x 0 --y 0 --operation-id brief-001 --json
-lightx2v workflow nodes --query "产品" --limit 20 --json
+lightx2v canvas nodes --query "产品" --limit 20 --json
 ```
 
 读取返回的真实节点 ID、素材引用和保存结果。上传完成不必然等于素材已绑定到画布：要确认回执已保存 / 已绑定，再读取节点核对。不要只看到 `upload_persisted` 就宣布画布更新完成。
@@ -416,8 +416,8 @@ lightx2v workflow nodes --query "产品" --limit 20 --json
 创建生成节点前先查询具体工具。例如：
 
 ```bash
-lightx2v workflow capabilities --tool-id text-to-image --json
-lightx2v workflow node get NODE_ID --include configuration --include inputs --json
+lightx2v canvas capabilities --tool-id text-to-image --json
+lightx2v canvas node get NODE_ID --include configuration --include inputs --json
 ```
 
 使用能力返回的 `allowed_models`、端口和参数 schema。图像输入、音频输入、视频输入需要持久素材引用；不要把数据库路径或临时下载地址冒充可持久化素材。
@@ -425,23 +425,23 @@ lightx2v workflow node get NODE_ID --include configuration --include inputs --js
 ### 6.3 节点、连接与参考顺序
 
 ```bash
-lightx2v workflow node move NODE_ID --x 640 --y 0 \
+lightx2v canvas node move NODE_ID --x 640 --y 0 \
   --operation-id move-001 --json
-lightx2v workflow node update NODE_ID --name "产品主图" \
+lightx2v canvas node update NODE_ID --name "产品主图" \
   --operation-id rename-node-001 --json
-lightx2v workflow node copy NODE_ID --x 640 --y 480 \
+lightx2v canvas node copy NODE_ID --x 640 --y 480 \
   --operation-id copy-001 --json
-lightx2v workflow connect SOURCE_NODE_ID TARGET_NODE_ID \
+lightx2v canvas connect SOURCE_NODE_ID TARGET_NODE_ID \
   --source-port out-image --target-port in-image \
   --operation-id connect-001 --json
 ```
 
-端口名称必须先从当前工具能力中确认，上例只示范图片端口。删除连接用 `workflow disconnect CONNECTION_ID`；删除节点用 `workflow node delete NODE_ID`，这两种写操作也应各自提供稳定 `--operation-id`。
+端口名称必须先从当前工具能力中确认，上例只示范图片端口。删除连接用 `canvas disconnect CONNECTION_ID`；删除节点用 `canvas node delete NODE_ID`，这两种写操作也应各自提供稳定 `--operation-id`。
 
 多参考模型的素材顺序会影响提示词对应关系。先读取目标节点的输入标识，再重排：
 
 ```bash
-lightx2v workflow reorder-inputs TARGET_NODE_ID \
+lightx2v canvas reorder-inputs TARGET_NODE_ID \
   --target-port in-image \
   --input-id INPUT_ID_A --input-id INPUT_ID_B \
   --operation-id order-001 --json
@@ -452,13 +452,13 @@ lightx2v workflow reorder-inputs TARGET_NODE_ID \
 ### 6.4 编组与布局
 
 ```bash
-lightx2v workflow group create --name "角色参考" \
+lightx2v canvas group create --name "角色参考" \
   --node-id NODE_A --node-id NODE_B --operation-id group-001 --json
-lightx2v workflow group list --json
-lightx2v workflow group get GROUP_ID --json
-lightx2v workflow group add GROUP_ID --node-id NODE_C \
+lightx2v canvas group list --json
+lightx2v canvas group get GROUP_ID --json
+lightx2v canvas group add GROUP_ID --node-id NODE_C \
   --operation-id add-member-001 --json
-lightx2v workflow group remove GROUP_ID --node-id NODE_C \
+lightx2v canvas group remove GROUP_ID --node-id NODE_C \
   --operation-id remove-member-001 --json
 ```
 
@@ -471,7 +471,7 @@ Agent 可以读取当前节点尺寸与组关系后计算布局，再提交位�
 多个有关联的修改可写入 `ops.json`，调用：
 
 ```bash
-lightx2v workflow edit --input @ops.json \
+lightx2v canvas edit --input @ops.json \
   --operation-id edit-batch-001 --json
 ```
 
@@ -492,8 +492,8 @@ lightx2v workflow edit --input @ops.json \
 编辑节点提示词或文档时，先读取文本，再按唯一锚点替换：
 
 ```bash
-lightx2v workflow text get NODE_ID --kind document --json
-lightx2v workflow text edit NODE_ID --kind document \
+lightx2v canvas text get NODE_ID --kind document --json
+lightx2v canvas text edit NODE_ID --kind document \
   --input '{"edits":[{"old":"柔和自然光","new":"午后侧逆光"}]}' \
   --operation-id text-edit-001 --json
 ```
@@ -505,18 +505,18 @@ lightx2v workflow text edit NODE_ID --kind document \
 先独立估价，检查完整性和运行范围：
 
 ```bash
-lightx2v workflow quote WORKFLOW_ID \
+lightx2v canvas quote CANVAS_ID \
   --mode single --node-id NODE_ID --json
 ```
 
 确认开始生成后，提交同一范围：
 
 ```bash
-lightx2v workflow run WORKFLOW_ID \
+lightx2v canvas run CANVAS_ID \
   --mode single --node-id NODE_ID \
   --operation-id run-node-001 --json
-lightx2v workflow wait WORKFLOW_ID RUN_ID --until outputs --json
-lightx2v workflow download WORKFLOW_ID --run-id RUN_ID \
+lightx2v canvas wait CANVAS_ID RUN_ID --until outputs --json
+lightx2v canvas download CANVAS_ID --run-id RUN_ID \
   -o ./delivery/run-001 --zip --json
 ```
 
@@ -528,11 +528,11 @@ lightx2v workflow download WORKFLOW_ID --run-id RUN_ID \
 | 指定编组 | `--group-id GROUP_ID` | 组内成员和依赖；不能与 node-id 混用 |
 | 整张画布 | `--mode full` | 是否真的需要运行全部节点 |
 
-带 `--node-id` 时必须显式选择 single / downstream / upstream；默认 full 与节点 ID 组合会被拒绝。运行可能包含上游依赖，先用相同范围的 `workflow inputs` 和估价核对；`--no-include-upstream` 只在你明确理解影响时使用。
+带 `--node-id` 时必须显式选择 single / downstream / upstream；默认 full 与节点 ID 组合会被拒绝。运行可能包含上游依赖，先用相同范围的 `canvas inputs` 和估价核对；`--no-include-upstream` 只在你明确理解影响时使用。
 
-模板需要外部输入时，先查 `workflow inputs WORKFLOW_ID`。`--inputs @inputs.json` 以输入节点 ID 为键；本地文件可用 `--input-file NODE_ID=./product.png`。把相同输入用于 quote 和 run，避免估价与实际运行不一致。
+模板需要外部输入时，先查 `canvas inputs CANVAS_ID`。`--inputs @inputs.json` 以输入节点 ID 为键；本地文件可用 `--input-file NODE_ID=./product.png`。把相同输入用于 quote 和 run，避免估价与实际运行不一致。
 
-读取进度可用 `workflow status WORKFLOW_ID RUN_ID`、`workflow stream WORKFLOW_ID RUN_ID`、`workflow outputs WORKFLOW_ID RUN_ID`。`wait --until terminal` 观察终态；`--until outputs` 还检查输出可用性。`outputs` 返回 `pending: true` 时继续观察原运行。
+读取进度可用 `canvas status CANVAS_ID RUN_ID`、`canvas stream CANVAS_ID RUN_ID`、`canvas outputs CANVAS_ID RUN_ID`。`wait --until terminal` 观察终态；`--until outputs` 还检查输出可用性。`outputs` 返回 `pending: true` 时继续观察原运行。
 
 下载必须指定确切 `--run-id`，还可按 `--node-id` 或 `--group-id` 过滤。检查返回的完整性、失败项及 manifest 校验信息；部分文件失败就报告部分交付。画布下载不覆盖已有文件，冲突时换一个新的目录，不能悄悄用节点后来选中的产物替代本次运行结果。
 
@@ -543,13 +543,13 @@ Script 是可读写的结构化创作内容，不只是一个长提示词。典�
 ### 7.1 先查询字段和完整示例
 
 ```bash
-lightx2v workflow script schema --json
-lightx2v workflow script schema --section anchors --json
-lightx2v workflow script schema --section shots --json
-lightx2v workflow script schema --field shots.dialogue.speaker_id --json
-lightx2v workflow script examples --json
-lightx2v workflow script guide --topic workflow --json
-lightx2v workflow script guide --topic anchor-prompts --json
+lightx2v canvas script schema --json
+lightx2v canvas script schema --section anchors --json
+lightx2v canvas script schema --section shots --json
+lightx2v canvas script schema --field shots.dialogue.speaker_id --json
+lightx2v canvas script examples --json
+lightx2v canvas script guide --topic canvas --json
+lightx2v canvas script guide --topic anchor-prompts --json
 ```
 
 这些查询不需要先创建画布，但仍需要配置身份和服务准入。schema 默认返回目录，section / field 返回更具体定义。公共动作请求结构通过 `schema --action ACTION` 查询；具体例子从 examples 目录选择，不猜字段。
@@ -557,14 +557,14 @@ lightx2v workflow script guide --topic anchor-prompts --json
 ### 7.2 保存脚本草案
 
 ```bash
-lightx2v workflow script examples --case create-script --json
-lightx2v workflow script examples --case create-script --payload-only > create-script.json
+lightx2v canvas script examples --case create-script --json
+lightx2v canvas script examples --case create-script --payload-only > create-script.json
 ```
 
 先阅读示例的 `replace` 说明，再编辑文件：改为自己的故事、当前画布 `version`、角色和镜头。示例文件不是一条可以不检查就运行的生产请求。
 
 ```bash
-lightx2v workflow edit --input @create-script.json \
+lightx2v canvas edit --input @create-script.json \
   --operation-id script-create-001 --json
 ```
 
@@ -575,11 +575,11 @@ lightx2v workflow edit --input @create-script.json \
 ### 7.3 分页读取、修改镜头和对白
 
 ```bash
-lightx2v workflow script read SCRIPT_NODE_ID --json
-lightx2v workflow script read SCRIPT_NODE_ID --section shots --view detail \
+lightx2v canvas script read SCRIPT_NODE_ID --json
+lightx2v canvas script read SCRIPT_NODE_ID --section shots --view detail \
   --revision SCRIPT_REVISION --offset 0 --limit 20 --json
-lightx2v workflow script read SCRIPT_NODE_ID --section anchors --view detail --json
-lightx2v workflow script read SCRIPT_NODE_ID --section shots --id s1 --view detail --json
+lightx2v canvas script read SCRIPT_NODE_ID --section anchors --view detail --json
+lightx2v canvas script read SCRIPT_NODE_ID --section shots --id s1 --view detail --json
 ```
 
 稳定 ID 用于定位，名字用于阅读；后续分页固定同一 `revision`，避免翻页过程中混入新版本。`subjects`、`outputs`、`media_sources`、`production` 等读取区段用于核对主体、产物来源及生产登记。
@@ -597,8 +597,8 @@ lightx2v workflow script read SCRIPT_NODE_ID --section shots --id s1 --view deta
 ```
 
 ```bash
-lightx2v workflow script schema --action edit --json
-lightx2v workflow script edit --input @edit-shot.json \
+lightx2v canvas script schema --action edit --json
+lightx2v canvas script edit --input @edit-shot.json \
   --operation-id shot-edit-001 --json
 ```
 
@@ -607,15 +607,15 @@ lightx2v workflow script edit --input @edit-shot.json \
 ### 7.4 准备、生成与同步锚点
 
 ```bash
-lightx2v workflow script schema --action prepare-anchors --json
-lightx2v workflow script examples --case prepare-anchors --json
-lightx2v workflow script examples --case prepare-anchors --payload-only > anchors.json
+lightx2v canvas script schema --action prepare-anchors --json
+lightx2v canvas script examples --case prepare-anchors --json
+lightx2v canvas script examples --case prepare-anchors --payload-only > anchors.json
 ```
 
 按示例替换节点、最新修订、目标锚点与模型设置；模型和参数查实时 capabilities。然后保存锚点生成节点：
 
 ```bash
-lightx2v workflow script prepare-anchors --input @anchors.json \
+lightx2v canvas script prepare-anchors --input @anchors.json \
   --operation-id anchors-prepare-001 --json
 ```
 
@@ -624,10 +624,10 @@ lightx2v workflow script prepare-anchors --input @anchors.json \
 结果完成后，对账绑定已有产物：
 
 ```bash
-lightx2v workflow script sync-anchors \
+lightx2v canvas script sync-anchors \
   --input '{"node_id":"SCRIPT_NODE_ID"}' \
   --operation-id anchors-sync-001 --json
-lightx2v workflow operation get anchors-sync-001 --kind sync --json
+lightx2v canvas operation get anchors-sync-001 --kind sync --json
 ```
 
 同一 sync ID 重放的是同一次对账；之后产生新结果，要用新的 sync ID 发起新一轮观察。`pending` 表示仍待对账，不能强行当成锚点已准备好。
@@ -635,8 +635,8 @@ lightx2v workflow operation get anchors-sync-001 --kind sync --json
 ### 7.5 视频提示词：查询、生成候选和保存
 
 ```bash
-lightx2v workflow script schema --action prompts --json
-lightx2v workflow script examples --case prompts --json
+lightx2v canvas script schema --action prompts --json
+lightx2v canvas script examples --case prompts --json
 ```
 
 先用 `mode=options` 查询适用模型，例如将下面内容保存为 `prompt-options.json`：
@@ -646,7 +646,7 @@ lightx2v workflow script examples --case prompts --json
 ```
 
 ```bash
-lightx2v workflow script prompts --input @prompt-options.json --json
+lightx2v canvas script prompts --input @prompt-options.json --json
 ```
 
 `compose` 用于确定性组合；`optimize` 会请求 AI 优化，需要按服务要求选择带 preset 的 `generation_model`。它虽然不会启动视频生成，但不是纯查询；是否涉及模型调用及费用以当前服务为准，不能一概写成免费。
@@ -660,37 +660,37 @@ lightx2v workflow script prompts --input @prompt-options.json --json
 先获取示例并替换真实值：
 
 ```bash
-lightx2v workflow script examples --case preview-video --payload-only > preview.json
-lightx2v workflow script preview --input @preview.json --json
+lightx2v canvas script examples --case preview-video --payload-only > preview.json
+lightx2v canvas script preview --input @preview.json --json
 ```
 
 检查 `shots`、`issues`、`issue_help`、`needs_review`、`too_large`，以及每个片段解析出的提示词和锚点素材顺序。缺素材、引用错误或内容过大时先修正，不把预检问题留给计费任务。
 
 ```bash
-lightx2v workflow script examples --case create-group --payload-only > create-group.json
+lightx2v canvas script examples --case create-group --payload-only > create-group.json
 ```
 
 将**同一次预检**的输入复制到建组文件，并填入原返回的 `preview_digest` 和 `shot_digests`（建组字段名是 `preview_shots`）。不能用空对象替代，也不能换了修订和参数还使用旧 digest。
 
 ```bash
-lightx2v workflow script create-group --input @create-group.json \
+lightx2v canvas script create-group --input @create-group.json \
   --operation-id video-group-001 --json
 ```
 
-这一步仅保存节点、连接和编组。拿到真实组 ID 后，先 `workflow quote --group-id`，确认范围和费用，再 `workflow run --group-id`。等待、下载使用该次真实 RUN_ID。
+这一步仅保存节点、连接和编组。拿到真实组 ID 后，先 `canvas quote --group-id`，确认范围和费用，再 `canvas run --group-id`。等待、下载使用该次真实 RUN_ID。
 
 ### 7.7 采用指定产物
 
 ```bash
-lightx2v workflow script read SCRIPT_NODE_ID --section outputs --view detail --json
-lightx2v workflow script examples --case select-output --json
-lightx2v workflow script examples --case select-output --payload-only > selection.json
+lightx2v canvas script read SCRIPT_NODE_ID --section outputs --view detail --json
+lightx2v canvas script examples --case select-output --json
+lightx2v canvas script examples --case select-output --payload-only > selection.json
 ```
 
 从 outputs 选择真实单元、准确 ref、来源节点、运行、端口及输出序号，更新 `expected_revision`，再提交：
 
 ```bash
-lightx2v workflow script select-output --input @selection.json \
+lightx2v canvas script select-output --input @selection.json \
   --operation-id select-output-001 --json
 ```
 
@@ -718,11 +718,11 @@ lightx2v workflow script select-output --input @selection.json \
 
 ### 8.5 已有画布修改：保留有效内容
 
-> 目标画布：WORKFLOW_ID。请先读取节点、尺寸、编组、连接和已有结果，概述当前结构。仅整理布局和命名，把参考素材与生成节点分区，保留原提示词、素材顺序、有效连接与产物。若需要转移编组成员，依据最新组关系处理。不要运行生成、取消任务或删除内容。完成后重新读取验证，并交付修改摘要和画布链接。
+> 目标画布：CANVAS_ID。请先读取节点、尺寸、编组、连接和已有结果，概述当前结构。仅整理布局和命名，把参考素材与生成节点分区，保留原提示词、素材顺序、有效连接与产物。若需要转移编组成员，依据最新组关系处理。不要运行生成、取消任务或删除内容。完成后重新读取验证，并交付修改摘要和画布链接。
 
 ### 8.6 批量交付：按运行核对文件
 
-> 目标画布：WORKFLOW_ID，范围：GROUP_ID 或明确节点列表，输出目录 OUTPUT_DIR，预算上限由我补充。先检查输入完整性并给出同范围估价；估价不完整时说明未知部分，不自动提交。确认后为每次运行保存 operation_id、run_id 和原始参数。断线先查询原操作，超时继续等待原运行；任何新生成或恢复执行均应在已授权范围内。按确切 run 下载，生成可核对的文件清单、失败原因与恢复建议，不覆盖已有交付。
+> 目标画布：CANVAS_ID，范围：GROUP_ID 或明确节点列表，输出目录 OUTPUT_DIR，预算上限由我补充。先检查输入完整性并给出同范围估价；估价不完整时说明未知部分，不自动提交。确认后为每次运行保存 operation_id、run_id 和原始参数。断线先查询原操作，超时继续等待原运行；任何新生成或恢复执行均应在已授权范围内。按确切 run 下载，生成可核对的文件清单、失败原因与恢复建议，不覆盖已有交付。
 
 ## 9. 积分、状态和异常恢复
 
@@ -735,8 +735,8 @@ lightx2v workflow script select-output --input @selection.json \
 | 上传、prepare-anchors、sync-anchors、preview、create-group、select-output | 否 | 可能保存或采用已有内容；不自动生成媒体 |
 | Script prompts 的 options / compose | 否 | 查询选项或确定性组合 |
 | Script prompts 的 optimize | 不生成视频，但会请求 AI 优化 | 不应当作纯只读查询或保证免费 |
-| workflow quote | 否 | 独立估价，不是运行授权 |
-| run / workflow run / tts / voice-clone create、tts / resume | 可能执行或恢复模型任务 | 按服务和当前账户规则计费 |
+| canvas quote | 否 | 独立估价，不是运行授权 |
+| run / canvas run / tts / voice-clone create、tts / resume | 可能执行或恢复模型任务 | 按服务和当前账户规则计费 |
 
 `run --quote` 会先报价、然后直接提交，**不是“只报价”模式，也不提供人工确认暂停**。要求先看费用再决定时，优先使用画布的独立 quote / run 两步流程；直接素材接口的独立报价见 API 文档，当前 CLI 没有对应顶层只报价命令。
 
@@ -747,7 +747,7 @@ lightx2v workflow script select-output --input @selection.json \
 | 标识 | 代表什么 | 用在哪里 |
 | --- | --- | --- |
 | task_id | 直接素材任务 | query / result / cancel / resume |
-| workflow_id | 一张画布 | workflow get / use |
+| workflow_id | 一张画布 | canvas get / use |
 | node_id、group_id | 画布中的节点、编组 | 编辑、确定运行和下载范围 |
 | operation_id | 一次公共写操作的请求身份 | 恢复创建、编辑、上传、运行等操作 |
 | run_id | 一次画布运行 | status / wait / outputs / download |
@@ -769,7 +769,7 @@ lightx2v result TASK_ID -o ./output/recovered.png
 **画布写操作结果未知：**
 
 ```bash
-lightx2v workflow operation get WORKFLOW_ID run-node-001 --kind run --json
+lightx2v canvas operation get CANVAS_ID run-node-001 --kind run --json
 ```
 
 有 run_id 后继续查询该运行。查询不到时保留原请求日志，按恢复提示重发**相同 operation_id 和相同载荷**。不能换 ID、变更版本或“顺便修改”参数，否则可能产生另一项操作。
@@ -779,10 +779,10 @@ lightx2v workflow operation get WORKFLOW_ID run-node-001 --kind run --json
 **画布运行等待超时：**
 
 ```bash
-lightx2v workflow wait WORKFLOW_ID RUN_ID --until outputs --timeout 600 --json
+lightx2v canvas wait CANVAS_ID RUN_ID --until outputs --timeout 600 --json
 ```
 
-停止本地等待或按 Ctrl-C 不等于取消服务端运行。确实要取消时，明确执行 `workflow cancel WORKFLOW_ID RUN_ID`；只取消一个节点及相关下游时使用 `workflow cancel-node WORKFLOW_ID RUN_ID NODE_ID`，随后核对状态。
+停止本地等待或按 Ctrl-C 不等于取消服务端运行。确实要取消时，明确执行 `canvas cancel CANVAS_ID RUN_ID`；只取消一个节点及相关下游时使用 `canvas cancel-node CANVAS_ID RUN_ID NODE_ID`，随后核对状态。
 
 ### 9.4 退出码和 JSON
 
@@ -800,7 +800,7 @@ lightx2v workflow wait WORKFLOW_ID RUN_ID --until outputs --timeout 600 --json
 Agent / 自动化建议使用 `--json`，并分别保留 stdout 与 stderr。公共画布通常输出一个 JSON 对象，恢复文件和操作身份可写到 stderr；直接素材 `run --json` 是多行事件流，不能直接假设整个文件是一个 JSON 对象。
 
 ```bash
-lightx2v workflow wait WORKFLOW_ID RUN_ID --until outputs --json \
+lightx2v canvas wait CANVAS_ID RUN_ID --until outputs --json \
   > wait.json 2> wait.stderr
 ```
 
@@ -861,26 +861,26 @@ CLI 从当前目录向父目录寻找已有 `.lightx2v/project.json`；不同项
 | `voices` / `tts` | 内置音色查询与台词合成 |
 | `voice-clone create / save / list / tts / delete` | 克隆音色与管理 |
 | `doctor` | 公共画布协议与账户就绪检查 |
-| `workflow list / get / inputs` | 列出、读取画布、查看运行输入 |
-| `workflow create / use / rename / delete` | 创建、选择、改名、删除画布 |
-| `workflow capabilities / nodes` | 查能力与搜索节点 |
-| `workflow upload / edit` | 上传素材、批量编辑 |
-| `workflow node create / update / move / copy / delete / get` | 节点操作 |
-| `workflow connect / disconnect / reorder-inputs` | 连线与参考顺序 |
-| `workflow group list / get / create / update / add / remove` | 编组读取和成员维护 |
-| `workflow group move / set-parent / ungroup / copy` | 转移成员、父组、解除和复制 |
-| `workflow text get / edit` | 协作读取和编辑提示词或文档 |
-| `workflow quote / run` | 独立估价与正式运行 |
-| `workflow runs / status / stream / outputs / wait` | 运行列表、状态、事件、结果和等待 |
-| `workflow cancel / cancel-node` | 取消运行或节点及相关下游 |
-| `workflow operation get` | 恢复查询操作回执 |
-| `workflow download` | 按确切运行下载与打包 |
-| `workflow script schema / examples / guide / read` | Script 规范、示例、指南和内容 |
-| `workflow script edit / prepare-anchors / sync-anchors` | 修改记录、准备和同步锚点 |
-| `workflow script prompts / preview / create-group / select-output` | 提示词候选、预检、建组、采用产物 |
+| `canvas list / get / inputs` | 列出、读取画布、查看运行输入 |
+| `canvas create / use / rename / delete` | 创建、选择、改名、删除画布 |
+| `canvas capabilities / nodes` | 查能力与搜索节点 |
+| `canvas upload / edit` | 上传素材、批量编辑 |
+| `canvas node create / update / move / copy / delete / get` | 节点操作 |
+| `canvas connect / disconnect / reorder-inputs` | 连线与参考顺序 |
+| `canvas group list / get / create / update / add / remove` | 编组读取和成员维护 |
+| `canvas group move / set-parent / ungroup / copy` | 转移成员、父组、解除和复制 |
+| `canvas text get / edit` | 协作读取和编辑提示词或文档 |
+| `canvas quote / run` | 独立估价与正式运行 |
+| `canvas runs / status / stream / outputs / wait` | 运行列表、状态、事件、结果和等待 |
+| `canvas cancel / cancel-node` | 取消运行或节点及相关下游 |
+| `canvas operation get` | 恢复查询操作回执 |
+| `canvas download` | 按确切运行下载与打包 |
+| `canvas script schema / examples / guide / read` | Script 规范、示例、指南和内容 |
+| `canvas script edit / prepare-anchors / sync-anchors` | 修改记录、准备和同步锚点 |
+| `canvas script prompts / preview / create-group / select-output` | 提示词候选、预检、建组、采用产物 |
 | `update` / `completion bash或zsh` | 更新和 Shell 补全 |
 
-所有层级均可加 `--help` 查看准确参数，例如 `lightx2v workflow group set-parent --help`。不要假设 `--json`、`--base-url` 等参数是可放在任意位置的全局参数；按对应子命令帮助使用。
+所有层级均可加 `--help` 查看准确参数，例如 `lightx2v canvas group set-parent --help`。不要假设 `--json`、`--base-url` 等参数是可放在任意位置的全局参数；按对应子命令帮助使用。
 
 ### 10.3 Shell 补全
 
@@ -900,7 +900,7 @@ eval "$(lightx2v completion zsh)"
 
 ### 10.4 本版核验范围与后续更新
 
-本教程依据 0.3.3 开发代码、真实命令帮助，以及兼容开发服务的 doctor、模型目录、画布读取、capabilities、Script schema / examples 查询编写。文中生成、克隆、取消与恢复执行示例本轮未新增计费实跑；不把“参数解析通过”当作真实生成成功。
+本教程依据 0.3.4 开发代码、真实命令帮助，以及兼容开发服务的 doctor、模型目录、画布读取、capabilities、Script schema / examples 查询编写。文中生成、克隆、取消与恢复执行示例本轮未新增计费实跑；不把“参数解析通过”当作真实生成成功。
 
 当前公网公共画布入口尚未就绪，官方主分支安装来源也尚未包含全部新版功能；正式上线前需完成新版发布、公开入口干净安装、目标服务授权及非生成流程复验。Windows 实机和所有模型组合尚未验证。
 

@@ -46,6 +46,19 @@ def build_parser() -> argparse.ArgumentParser:
     add_doctor(subparsers)
     update.add_parser(subparsers)
     completion.add_parser(subparsers)
+    def canonical_help(current):
+        for action in current._actions:
+            if '--canvas-id' in action.option_strings:
+                action.option_strings.remove('--workflow-id')
+            if isinstance(action, argparse._SubParsersAction):
+                seen = set()
+                for child in action.choices.values():
+                    if id(child) not in seen:
+                        seen.add(id(child))
+                        canonical_help(child)
+    canonical_help(parser)
+    # Legacy aliases remain accepted but are omitted from the recommended surface.
+    subparsers.metavar = "{" + ",".join(name for name in subparsers.choices if name != "workflow") + "}"
     return parser
 
 

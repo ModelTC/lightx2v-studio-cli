@@ -65,3 +65,5 @@ lightx2v models
 eval "$(lightx2v completion bash)"
 eval "$(lightx2v completion zsh)"
 ```
+
+CLI 0.3.4 uses `lightx2v canvas` throughout help, completion and examples. The previous command spelling remains a hidden compatibility alias. API routes and response keys retain their existing protocol names.

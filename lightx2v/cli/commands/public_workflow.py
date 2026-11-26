@@ -28,7 +28,34 @@ class CommandFailure(Exception):
 
 
 def output(value):
-    print(json.dumps(value, ensure_ascii=False, allow_nan=False))
+    print(json.dumps(_canonical_commands(value), ensure_ascii=False, allow_nan=False))
+
+
+def _canonical_commands(value):
+    """Display current CLI spellings in server-supplied command/example text."""
+    if isinstance(value, dict):
+        return {key: _canonical_commands(item) if key not in {'command', 'hint', 'recovery', 'message'}
+                else _command_text(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_canonical_commands(item) for item in value]
+    return value
+
+
+def _command_text(value):
+    if not isinstance(value, str):
+        return _canonical_commands(value)
+    value = re.sub(r'(?<![\w/])(?:lightx2v )?workflow (?=(?:list|get|inputs|create|use|capabilities|nodes|edit|rename|delete|upload|wait|download|quote|operation|node|connect|disconnect|reorder-inputs|group|text|script|run|runs|status|stream|outputs|cancel|cancel-node)\b)',
+                   lambda match: match.group().replace('workflow ', 'canvas '), value)
+    return value.replace('--workflow-id', '--canvas-id').replace('WORKFLOW_ID', 'CANVAS_ID').replace('--topic workflow', '--topic canvas')
+
+
+def _guide_commands(value):
+    # Only documentation responses contain templates; never rewrite user content.
+    if isinstance(value, dict):
+        return {key: _guide_commands(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_guide_commands(item) for item in value]
+    return _command_text(value) if isinstance(value, str) else value
 
 
 def project_file():
@@ -62,13 +89,13 @@ def publish_file(source, destination):
 def workflow_id(args, config, doctor):
     explicit = getattr(args, 'workflow_id', None) or getattr(args, 'target_workflow', None)
     if getattr(args, 'workflow_id', None) and getattr(args, 'target_workflow', None) and args.workflow_id != args.target_workflow:
-        raise ValueError('Conflicting workflow IDs')
+        raise ValueError('Conflicting canvas IDs')
     if explicit:return explicit
     path = project_file()
-    if not path.is_file():raise ValueError('Specify a workflow ID or run workflow use first')
+    if not path.is_file():raise ValueError('Specify a canvas ID or run canvas use first')
     record = json.loads(path.read_text())
     if record.get('base_url') != config.base_url.rstrip('/') or record.get('user_id') != doctor['user_id']:
-        raise ValueError('Project context belongs to another service/account; run workflow use explicitly')
+        raise ValueError('Project context belongs to another service/account; run canvas use explicitly')
     return record['workflow_id']
 
 
@@ -79,7 +106,7 @@ def json_arg(value, default=None):
 
 
 def api_path(wid, tail):
-    if not isinstance(wid, str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}', wid):raise ValueError('Invalid workflow ID')
+    if not isinstance(wid, str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}', wid):raise ValueError('Invalid canvas ID')
     return f'/api/v1/workflow/{wid}/public/{tail}'
 
 
@@ -247,7 +274,7 @@ def handle(args):
                 body = {'view': args.script_command}
                 for key in ('section', 'field', 'case', 'topic', 'action'):
                     if getattr(args, key, None) is not None:
-                        body[key] = getattr(args, key)
+                        body[key] = 'workflow' if key == 'topic' and getattr(args, key) == 'canvas' else getattr(args, key)
                 try:
                     result = client._request('POST', '/api/v1/workflow/public/script/guide', json=body)
                 except ApiError as error:
@@ -257,6 +284,8 @@ def handle(args):
                     raise
                 if getattr(args, 'payload_only', False):
                     result = result['payload']
+                else:
+                    result = _guide_commands(result)
             elif op=='create':
                 body={'name':args.name or '未命名画布','description':args.description or ''}
                 result=mutate(client,doctor,args,'new','create',body,
@@ -315,7 +344,7 @@ def handle(args):
                     from .workflow import _run_body
                     body=_run_body(args)
                     if args.node_ids and args.mode=='full':
-                        raise ValueError('--node-id requires --mode single, downstream or upstream; full runs the entire workflow')
+                        raise ValueError('--node-id requires --mode single, downstream or upstream; full runs the entire canvas')
                     if args.group_id:
                         if args.node_ids:raise ValueError('Do not combine group and node scopes')
                         body.update(group_id=args.group_id,mode='single')
@@ -445,7 +474,7 @@ def download(client,wid,args):
 
 
 def common(parser, *, workflow=True, mutation=False):
-    if workflow:parser.add_argument('workflow_id',nargs='?');parser.add_argument('--workflow-id',dest='target_workflow')
+    if workflow:parser.add_argument('workflow_id',nargs='?',metavar='CANVAS_ID');parser.add_argument('--canvas-id','--workflow-id',dest='target_workflow',metavar='CANVAS_ID')
     parser.add_argument('--json',action='store_true');parser.add_argument('--quiet',action='store_true')
     if mutation:parser.add_argument('--operation-id');parser.add_argument('--version',type=int)
     return parser
@@ -456,7 +485,7 @@ def extend(nested,create,run):
     add_text_commands(nested,handle)
     script = nested.add_parser('script', help='Read and prepare structured Script records')
     script_commands = script.add_subparsers(dest='script_command', required=True)
-    schema = common(script_commands.add_parser('schema', help='Query live field types, defaults, semantics and maintenance ownership; no workflow required'), workflow=False)
+    schema = common(script_commands.add_parser('schema', help='Query live field types, defaults, semantics and maintenance ownership; no canvas required'), workflow=False)
     choice = schema.add_mutually_exclusive_group()
     choice.add_argument('--section', choices=['script', 'shots', 'anchors', 'units'])
     choice.add_argument('--action', help='Read the exact public request schema for edit, prepare-anchors, sync-anchors, prompts or another advertised action')
@@ -466,12 +495,12 @@ def extend(nested,create,run):
     example.add_argument('--case', help='Case from the example catalogue')
     example.add_argument('--payload-only', action='store_true', help='Emit only the JSON payload for --case; fill documented runtime values before submitting')
     example.set_defaults(handler=handle, public_operation='script-guide')
-    guide = common(script_commands.add_parser('guide', help='Read workflow, anchor prompt authoring, variants, editing or preflight rules without a basic skill'), workflow=False)
-    guide.add_argument('--topic', choices=['workflow', 'editing', 'variants', 'anchor-prompts', 'preflight'], default='workflow')
+    guide = common(script_commands.add_parser('guide', help='Read canvas, anchor prompt authoring, variants, editing or preflight rules without a basic skill'), workflow=False)
+    guide.add_argument('--topic', choices=['canvas', 'workflow', 'editing', 'variants', 'anchor-prompts', 'preflight'], default='canvas', metavar='{canvas,editing,variants,anchor-prompts,preflight}')
     guide.set_defaults(handler=handle, public_operation='script-guide')
     read = common(script_commands.add_parser('read', help='Read a Script summary or a page of detail'), workflow=False)
     read.add_argument('node_id')
-    read.add_argument('--workflow-id', dest='target_workflow')
+    read.add_argument('--canvas-id', '--workflow-id', dest='target_workflow', metavar='CANVAS_ID')
     read.add_argument('--revision', help='Pin an exact Script revision')
     read.add_argument('--section', choices=['shots', 'anchors', 'units', 'subjects', 'outputs', 'media_sources', 'production'])
     read.add_argument('--view', choices=['summary', 'detail'])
@@ -490,14 +519,14 @@ def extend(nested,create,run):
     ):
         stage = common(script_commands.add_parser(name, help=description))
         example = {'preview': 'preview-video', 'edit': 'edit-record'}.get(name, name)
-        input_help = f'JSON object or @file. Read workflow script examples --case {example}.'
+        input_help = f'JSON object or @file. Read canvas script examples --case {example}.'
         if name == 'prompts':
             input_help += ' Use mode=options to find generation_models. In mode=optimize pass an ID with preset_id as generation_model.'
         else:
-            input_help += ' See workflow script guide --topic preflight.'
+            input_help += ' See canvas script guide --topic preflight.'
         stage.add_argument('--input', required=True, help=input_help)
         if name not in {'preview', 'prompts'}:
-            stage.add_argument('--operation-id', help='Stable ID for retry and workflow operation get')
+            stage.add_argument('--operation-id', help='Stable ID for retry and canvas operation get')
         stage.set_defaults(handler=handle, public_operation='script-stage')
     # Preserve legacy JSON create; --name creates an idempotent empty canvas.
     create.add_argument('--name');create.add_argument('--description');create.add_argument('--operation-id')
@@ -516,7 +545,7 @@ def extend(nested,create,run):
     p=nested.add_parser('operation');sub=p.add_subparsers(dest='operation_command',required=True);p=common(sub.add_parser('get'));p.add_argument('operation');p.add_argument('--kind',choices=['edit','upload','run','create','text','sync'],default='edit');p.set_defaults(handler=handle,public_operation='operation')
     node=nested.add_parser('node').add_subparsers(dest='node_command',required=True)
     for name,action in [('create','create'),('update','update'),('move','move'),('copy','copy'),('delete','delete'),('get',None)]:
-        p=common(node.add_parser(name),workflow=False,mutation=bool(action));p.add_argument('--workflow-id',dest='target_workflow')
+        p=common(node.add_parser(name),workflow=False,mutation=bool(action));p.add_argument('--canvas-id','--workflow-id',dest='target_workflow',metavar='CANVAS_ID')
         if name!='create':p.add_argument('node_id')
         if action:
             p.add_argument('--input');p.add_argument('--name');p.add_argument('--tool-id');p.add_argument('--parameters');p.add_argument('--text-inputs')
@@ -525,14 +554,14 @@ def extend(nested,create,run):
             p.set_defaults(handler=handle,public_operation='item',public_action=action)
         else:p.add_argument('--input');p.add_argument('--include',action='append',choices=['configuration','inputs','content','runtime','outputs','layout','diagnostics']);p.set_defaults(handler=handle,public_operation='node-get')
     for name,action in [('connect','connect'),('disconnect','disconnect'),('reorder-inputs','reorder_inputs')]:
-        p=common(nested.add_parser(name),workflow=False,mutation=True);p.add_argument('--workflow-id',dest='target_workflow');p.add_argument('--input')
+        p=common(nested.add_parser(name),workflow=False,mutation=True);p.add_argument('--canvas-id','--workflow-id',dest='target_workflow',metavar='CANVAS_ID');p.add_argument('--input')
         if action=='connect':p.add_argument('source_node_id');p.add_argument('target_node_id');p.add_argument('--source-port');p.add_argument('--target-port')
         elif action=='disconnect':p.add_argument('connection_id')
         else:p.add_argument('node_id');p.add_argument('--target-port',required=True);p.add_argument('--input-id',action='append',dest='input_ids',required=True)
         p.set_defaults(handler=handle,public_operation='item',public_action=action)
     group=nested.add_parser('group').add_subparsers(dest='group_command',required=True)
     for name,action in [('list',None),('get',None),('create','group'),('update','group'),('add','group_add_members'),('remove','group_remove_members'),('move','group_move_members'),('set-parent','group_set_parent'),('ungroup','ungroup'),('copy','copy_group')]:
-        p=common(group.add_parser(name),workflow=False,mutation=bool(action));p.add_argument('--workflow-id',dest='target_workflow')
+        p=common(group.add_parser(name),workflow=False,mutation=bool(action));p.add_argument('--canvas-id','--workflow-id',dest='target_workflow',metavar='CANVAS_ID')
         if name not in {'create','list'}:p.add_argument('group_id')
         if action:
             p.add_argument('--input');p.add_argument('--name');p.add_argument('--color');p.add_argument('--node-id',action='append',dest='node_ids')

@@ -320,3 +320,76 @@ def test_explicit_submission_outcome_overrides_generic_http_status(transport, ca
     last_json(capsys)
     [record] = list(Path('.lightx2v/operations').glob('*.json'))
     assert json.loads(record.read_text())['status'] == journal_status
+
+@pytest.mark.parametrize('namespace', ['canvas', 'workflow'])
+@pytest.mark.parametrize('flag', ['--canvas-id', '--workflow-id'])
+def test_canvas_namespace_and_selection_aliases_share_dispatch(namespace, flag):
+    args = build_parser().parse_args([namespace, 'node', 'get', 'n', flag, 'w'])
+    assert args.target_workflow == 'w'
+    assert args.public_operation == 'node-get'
+
+
+def test_canvas_help_only_recommends_canonical_names():
+    import argparse
+    parser = build_parser()
+    assert 'canvas' in parser.format_help()
+    assert 'workflow' not in parser.format_help()
+    visited = set()
+    def check(current):
+        if id(current) in visited:
+            return
+        visited.add(id(current))
+        assert '--workflow-id' not in current.format_help()
+        assert 'workflow script' not in current.format_help()
+        assert 'workflow operation' not in current.format_help()
+        for action in current._actions:
+            if isinstance(action, argparse._SubParsersAction):
+                for child in action.choices.values():
+                    check(child)
+    check(parser)
+
+
+def test_canvas_alias_recovers_legacy_operation_without_new_request_identity(transport, capsys):
+    calls, state = transport
+    state['lost'] = True
+    old = ['workflow', 'node', 'create', '--workflow-id', 'w', '--tool-id',
+           'text-document', '--body', 'Keep this exact text', '--operation-id', 'shared-alias', '--json']
+    assert main(old) == 4
+    first = last_json(capsys)
+    new = ['canvas' if item == 'workflow' else '--canvas-id' if item == '--workflow-id' else item for item in old]
+    assert main(new) == 0
+    result = last_json(capsys)
+    assert result['operation_id'] == first['operation_id'] == 'shared-alias'
+    writes = [json.loads(request.content) for request in calls if request.url.path.endswith('/edit')]
+    assert len(writes) == 2 and writes[0] == writes[1]
+    assert len(list(Path('.lightx2v/operations').glob('*.json'))) == 1
+
+
+def test_canvas_guide_maps_topic_and_displays_only_canonical_commands(transport, capsys):
+    calls, state = transport
+    state['guide_response'] = {'command': 'workflow script edit --workflow-id WORKFLOW_ID --input @edit.json',
+                               'steps': ['lightx2v workflow script guide --topic workflow'],
+                               'payload': {'workflow_id': 'WORKFLOW_ID'}}
+    assert main(['canvas', 'script', 'guide', '--topic', 'canvas', '--json']) == 0
+    result = last_json(capsys)
+    assert json.loads(calls[-1].content)['topic'] == 'workflow'
+    assert result['command'] == 'canvas script edit --canvas-id CANVAS_ID --input @edit.json'
+    assert result['steps'] == ['lightx2v canvas script guide --topic canvas']
+    assert result['payload'] == {'workflow_id': 'CANVAS_ID'}
+
+
+def test_command_display_does_not_rewrite_user_text():
+    result = public._canonical_commands({'text': {'source': 'workflow script edit --workflow-id WORKFLOW_ID'},
+                                         'workflow_id': 'owned-canvas'})
+    assert result['text']['source'] == 'workflow script edit --workflow-id WORKFLOW_ID'
+    assert result['workflow_id'] == 'owned-canvas'
+
+
+def test_bash_completion_recommends_canvas_without_legacy_namespace():
+    import subprocess
+    from lightx2v.cli.commands.completion import _bash_script
+    script = _bash_script() + '\nCOMP_WORDS=(lightx2v ""); COMP_CWORD=1; _lightx2v_completions; printf "%s\\n" "${COMPREPLY[@]}"\n'
+    completed = subprocess.run(['bash', '-c', script], capture_output=True, text=True, check=True)
+    candidates = completed.stdout.splitlines()
+    assert 'canvas' in candidates and 'workflow' not in candidates
+    assert {'voices', 'tts', 'voice-clone', 'doctor'} <= set(candidates)

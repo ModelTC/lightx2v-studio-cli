@@ -11,7 +11,7 @@ def add_text_commands(nested,handler):
     group=nested.add_parser('text',help='Collaboratively read or edit a node prompt/document').add_subparsers(dest='text_command',required=True)
     for action in ('get','edit'):
         parser=group.add_parser(action)
-        parser.add_argument('node_id');parser.add_argument('--workflow-id',dest='target_workflow')
+        parser.add_argument('node_id');parser.add_argument('--canvas-id','--workflow-id',dest='target_workflow',metavar='CANVAS_ID')
         parser.add_argument('--kind',choices=['prompt','document'],default='prompt')
         parser.add_argument('--port-id',default='in-text')
         parser.add_argument('--json',action='store_true');parser.add_argument('--quiet',action='store_true')

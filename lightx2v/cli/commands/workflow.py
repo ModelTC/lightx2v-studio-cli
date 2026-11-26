@@ -16,14 +16,16 @@ TERMINAL_STATUSES = {"succeeded", "failed", "cancelled"}
 
 
 def add_parser(subparsers: argparse._SubParsersAction) -> None:
-    parser = subparsers.add_parser("workflow", help="List, create, run, and inspect workflows")
+    parser = subparsers.add_parser("canvas", aliases=["workflow"], help="Create, edit, run, and inspect canvases")
+    # Keep the old spelling callable without advertising it in help.
+    subparsers._choices_actions[-1].metavar = "canvas"
     nested = parser.add_subparsers(dest="workflow_command", required=True)
 
-    list_cmd = nested.add_parser("list", help="List workflows")
+    list_cmd = nested.add_parser("list", help="List canvases")
     list_cmd.add_argument(
         "--public",
         action="store_true",
-        help="Legacy compatibility flag; API keys only list workflows owned by the account",
+        help="Legacy compatibility flag; API keys only list canvases owned by the account",
     )
     list_cmd.add_argument("--search", help="Search keyword")
     list_cmd.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
@@ -32,14 +34,14 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     add_quiet_flag(list_cmd)
     list_cmd.set_defaults(handler=handle_list)
 
-    get = nested.add_parser("get", help="Get workflow JSON")
-    get.add_argument("workflow_id", help="Workflow ID")
+    get = nested.add_parser("get", help="Get canvas JSON")
+    get.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     add_json_flag(get)
     add_quiet_flag(get)
     get.set_defaults(handler=handle_get)
 
-    inputs = nested.add_parser("inputs", help="Describe inputs required for a workflow run")
-    inputs.add_argument("workflow_id", help="Workflow ID")
+    inputs = nested.add_parser("inputs", help="Describe inputs required for a canvas run")
+    inputs.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     inputs.add_argument("--mode", choices=["full", "single", "downstream", "upstream"], default="full")
     inputs.add_argument("--node-id", action="append", dest="node_ids", help="Node ID in the requested run scope; repeatable")
     inputs.add_argument("--no-include-upstream", action="store_true", help="Do not include upstream dependencies")
@@ -47,20 +49,20 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     add_quiet_flag(inputs)
     inputs.set_defaults(handler=handle_inputs)
 
-    create = nested.add_parser("create", help="Create a workflow from JSON")
+    create = nested.add_parser("create", help="Create a canvas from JSON")
     create.add_argument("--input", help="Workflow body JSON or @file.json")
     add_json_flag(create)
     add_quiet_flag(create)
     create.set_defaults(handler=handle_create)
 
-    run = nested.add_parser("run", help="Start a workflow run")
-    run.add_argument("workflow_id", help="Workflow ID")
+    run = nested.add_parser("run", help="Start a canvas run")
+    run.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     run.add_argument("--mode", choices=["full", "single", "downstream", "upstream"], default="full")
     run.add_argument("--node-id", action="append", dest="node_ids", help="Node ID to run; repeatable")
     run.add_argument("--no-include-upstream", action="store_true", help="Do not include upstream nodes")
     run.add_argument("--inputs", help="Run inputs JSON or @file.json, keyed by input node_id")
     run.add_argument("--input-file", action="append", default=[], metavar="NODE_ID=PATH", help="Bind a local media file to an input node; repeatable")
-    run.add_argument("--save-as-default", action="store_true", help="Persist inputs as workflow defaults")
+    run.add_argument("--save-as-default", action="store_true", help="Persist inputs as canvas defaults")
     run.add_argument("--poll", action="store_true", help="Poll until terminal status")
     run.add_argument("--poll-interval", type=float, default=2.0, help="Seconds between polls (default: 2)")
     run.add_argument("--timeout", type=float, default=600.0, help="Max seconds to poll (default: 600)")
@@ -68,43 +70,43 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     add_quiet_flag(run)
     run.set_defaults(handler=handle_run)
 
-    runs = nested.add_parser("runs", help="List runs for a workflow")
-    runs.add_argument("workflow_id", help="Workflow ID")
+    runs = nested.add_parser("runs", help="List runs for a canvas")
+    runs.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     runs.add_argument("--status", choices=["running"], help="Only list active runs")
     add_json_flag(runs)
     add_quiet_flag(runs)
     runs.set_defaults(handler=handle_runs)
 
-    status = nested.add_parser("status", help="Get workflow run status")
-    status.add_argument("workflow_id", help="Workflow ID")
+    status = nested.add_parser("status", help="Get canvas run status")
+    status.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     status.add_argument("run_id", help="Run ID")
     add_json_flag(status)
     add_quiet_flag(status)
     status.set_defaults(handler=handle_status)
 
-    stream = nested.add_parser("stream", help="Stream workflow run events over SSE")
-    stream.add_argument("workflow_id", help="Workflow ID")
+    stream = nested.add_parser("stream", help="Stream canvas run events over SSE")
+    stream.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     stream.add_argument("run_id", help="Run ID")
     add_json_flag(stream)
     add_quiet_flag(stream)
     stream.set_defaults(handler=handle_stream)
 
-    outputs = nested.add_parser("outputs", help="Get workflow run final outputs")
-    outputs.add_argument("workflow_id", help="Workflow ID")
+    outputs = nested.add_parser("outputs", help="Get canvas run final outputs")
+    outputs.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     outputs.add_argument("run_id", help="Run ID")
     add_json_flag(outputs)
     add_quiet_flag(outputs)
     outputs.set_defaults(handler=handle_outputs)
 
-    cancel = nested.add_parser("cancel", help="Cancel a workflow run")
-    cancel.add_argument("workflow_id", help="Workflow ID")
+    cancel = nested.add_parser("cancel", help="Cancel a canvas run")
+    cancel.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     cancel.add_argument("run_id", help="Run ID")
     add_json_flag(cancel)
     add_quiet_flag(cancel)
     cancel.set_defaults(handler=handle_cancel)
 
     cancel_node = nested.add_parser("cancel-node", help="Cancel one node and dependent downstream work")
-    cancel_node.add_argument("workflow_id", help="Workflow ID")
+    cancel_node.add_argument("workflow_id", metavar="CANVAS_ID", help="Canvas ID")
     cancel_node.add_argument("run_id", help="Run ID")
     cancel_node.add_argument("node_id", help="Node ID")
     add_json_flag(cancel_node)
@@ -151,7 +153,7 @@ def handle_list(args: argparse.Namespace) -> int:
             return 0
         workflows = data.get("workflows") or []
         if not workflows:
-            console.println("No workflows found.")
+            console.println("No canvases found.")
             return 0
         headers = ("workflow_id", "name", "visibility")
         rows = [(str(w.get("workflow_id") or ""), str(w.get("name") or ""), str(w.get("visibility") or "")) for w in workflows]

@@ -29,3 +29,11 @@ Before reporting completion:
 
 Do not include API keys, device codes, private workflow content or internal service
 credentials in documentation, screenshots, Git commits or PR descriptions.
+
+## Canonical Canvas namespace
+
+Recommend only `lightx2v canvas` and `--canvas-id` in help, completion, tutorials,
+server-provided command examples and Skills. Keep `workflow` and `--workflow-id`
+as hidden compatibility aliases sharing dispatch, API requests and operation
+journals. Do not advertise aliases as an alternative workflow. Preserve existing
+server API routes and JSON fields when mapping CLI arguments.
