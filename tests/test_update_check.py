@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
+from lightx2v import __version__
 from lightx2v.cli.client import LightX2VClient
 from lightx2v.cli.config import CliConfig
 from lightx2v.cli.main import build_parser
@@ -46,10 +47,10 @@ def test_update_checker_emits_once_per_day_and_marks_minimum_version(tmp_path):
 
 def test_client_sends_version_and_prints_server_update_notice_once(tmp_path, capsys):
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.headers["user-agent"] == "lightx2v-cli/0.2.0"
+        assert request.headers["user-agent"] == f"lightx2v-cli/{__version__}"
         return httpx.Response(
             200,
-            headers={"X-LightX2V-CLI-Latest-Version": "0.3.0"},
+            headers={"X-LightX2V-CLI-Latest-Version": "99.0.0"},
             json={"models": []},
         )
 
@@ -58,14 +59,14 @@ def test_client_sends_version_and_prints_server_update_notice_once(tmp_path, cap
     client._client = httpx.Client(
         base_url="https://example.test",
         transport=httpx.MockTransport(handler),
-        headers={"User-Agent": "lightx2v-cli/0.2.0"},
+        headers={"User-Agent": f"lightx2v-cli/{__version__}"},
     )
     client._update_checker.cache_path = tmp_path / "update-check.json"
 
     with client:
         client.list_models()
 
-    assert "New LightX2V CLI version available: 0.3.0" in capsys.readouterr().err
+    assert "New LightX2V CLI version available: 99.0.0" in capsys.readouterr().err
 
 
 def test_disabled_update_checker_stays_silent(tmp_path):
@@ -90,4 +91,4 @@ def test_root_parser_exposes_version_and_update_command(capsys):
         assert exc.code == 0
     else:
         raise AssertionError("--version should terminate parsing")
-    assert "lightx2v 0.2.0" in capsys.readouterr().out
+    assert f"lightx2v {__version__}" in capsys.readouterr().out

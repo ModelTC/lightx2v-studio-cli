@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+import httpx
 from typing import Any
 
 from lightx2v.cli.commands._task_ops import with_client
@@ -47,7 +48,7 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     inputs.set_defaults(handler=handle_inputs)
 
     create = nested.add_parser("create", help="Create a workflow from JSON")
-    create.add_argument("--input", required=True, help="Workflow body JSON or @file.json")
+    create.add_argument("--input", help="Workflow body JSON or @file.json")
     add_json_flag(create)
     add_quiet_flag(create)
     create.set_defaults(handler=handle_create)
@@ -109,6 +110,9 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
     add_json_flag(cancel_node)
     add_quiet_flag(cancel_node)
     cancel_node.set_defaults(handler=handle_cancel_node)
+
+    from .public_workflow import extend
+    extend(nested, create, run)
 
 
 def _print(args: argparse.Namespace, console, payload: Any) -> None:
@@ -188,6 +192,10 @@ def handle_inputs(args: argparse.Namespace) -> int:
 
 
 def handle_create(args: argparse.Namespace) -> int:
+    if not args.input:
+        from .public_workflow import handle
+        args.public_operation = 'create'
+        return handle(args)
     def _run(client, args, console):
         body = _body_from_json_arg(args.input)
         _print(args, console, client.create_workflow(body))
@@ -257,11 +265,24 @@ def handle_runs(args: argparse.Namespace) -> int:
 
 def handle_stream(args: argparse.Namespace) -> int:
     def _run(client, args, console):
-        for event in client.stream_workflow_run(args.workflow_id, args.run_id):
-            if args.json:
-                print(json.dumps(event, ensure_ascii=False))
-            elif not args.quiet:
-                console.println(f"{event['event']}: {json.dumps(event['data'], ensure_ascii=False)}")
+        # Reconnect only to the same run. SSE is observation, never submission.
+        for attempt in range(4):
+            state=client.get_workflow_run(args.workflow_id,args.run_id)
+            if str(state.get('status','')).lower() in TERMINAL_STATUSES:
+                _print(args,console,state)
+                return 0
+            try:
+                for event in client.stream_workflow_run(args.workflow_id, args.run_id):
+                    if args.json:
+                        print(json.dumps(event, ensure_ascii=False))
+                    elif not args.quiet:
+                        console.println(f"{event['event']}: {json.dumps(event['data'], ensure_ascii=False)}")
+            except httpx.TransportError:
+                if attempt==3:raise
+            state=client.get_workflow_run(args.workflow_id,args.run_id)
+            if str(state.get('status','')).lower() in TERMINAL_STATUSES:return 0
+            if attempt==3:raise httpx.ReadError('Run stream disconnected; resume observation with the same run ID')
+            time.sleep(min(2,0.25*(attempt+1)))
         return 0
 
     return with_client(args, _run)

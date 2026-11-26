@@ -42,6 +42,8 @@ def build_parser() -> argparse.ArgumentParser:
     tts.add_parser(subparsers)
     voice_clone.add_parser(subparsers)
     workflow.add_parser(subparsers)
+    from lightx2v.cli.commands.public_workflow import add_doctor
+    add_doctor(subparsers)
     update.add_parser(subparsers)
     completion.add_parser(subparsers)
     return parser
