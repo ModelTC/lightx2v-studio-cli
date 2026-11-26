@@ -91,7 +91,10 @@ class LightX2VClient:
                 message = str(payload["error"])
         except Exception:
             pass
-        return ApiError(response.status_code, message)
+        error = ApiError(response.status_code, message)
+        try:error.payload = response.json()
+        except ValueError:error.payload = None
+        return error
 
     def list_models(self) -> dict:
         return self._request("GET", "/api/v1/model/list")
@@ -130,11 +133,11 @@ class LightX2VClient:
         return self._request("DELETE", "/api/v1/task/delete", params={"task_id": task_id})
 
     def download(self, url: str) -> bytes:
-        response = self._client.get(url, follow_redirects=True)
-        self._update_checker.observe_headers(response.headers)
-        if not response.is_success:
-            raise ApiError(response.status_code, response.text)
-        return response.content
+        from io import BytesIO
+        from .downloads import stream_original
+        output = BytesIO()
+        stream_original(self.config, url, output)
+        return output.getvalue()
 
     def list_voices(self, *, version: str = "all", fields: str = "card") -> dict:
         return self._request("GET", "/api/v1/voices/list", params={"version": version, "fields": fields})

@@ -13,7 +13,11 @@ _SUBCOMMANDS = [
     "resume",
     "delete",
     "result",
-    "workflow",
+    "voices",
+    "tts",
+    "voice-clone",
+    "canvas",
+    "doctor",
     "update",
     "completion",
 ]
@@ -56,13 +60,13 @@ _lightx2v_completions() {{
       COMPREPLY=( $(compgen -W "--json" -- "$cur") )
       ;;
     login)
-      COMPREPLY=( $(compgen -W "--base-url" -- "$cur") )
+      COMPREPLY=( $(compgen -W "--base-url --language --api-key --headless --resume --json" -- "$cur") )
       ;;
-    workflow)
+    canvas|workflow)
       if [[ ${{COMP_CWORD}} -eq 2 ]]; then
-        COMPREPLY=( $(compgen -W "list get inputs create run runs status stream outputs cancel cancel-node" -- "$cur") )
+        COMPREPLY=( $(compgen -W "list get inputs create use capabilities nodes edit rename delete upload node connect disconnect reorder-inputs group text script quote run runs status stream outputs wait download operation cancel cancel-node" -- "$cur") )
       else
-        COMPREPLY=( $(compgen -W "--public --search --page --page-size --mode --node-id --no-include-upstream --inputs --input-file --save-as-default --poll --poll-interval --timeout --status --json -q" -- "$cur") )
+        COMPREPLY=( $(compgen -W "--canvas-id --operation-id --version --input --file --tool-id --name --body --group-id --until --run-id --zip --public --search --page --page-size --mode --node-id --no-include-upstream --inputs --input-file --save-as-default --poll --poll-interval --timeout --status --json -q" -- "$cur") )
       fi
       ;;
     completion)
@@ -89,7 +93,11 @@ _lightx2v() {{
     'resume:Resume task'
     'delete:Delete task'
     'result:Get result URL'
-    'workflow:List, run, and inspect workflows'
+    'canvas:Create, edit, run, and inspect canvases'
+    'voices:List built-in voices'
+    'tts:Synthesize speech'
+    'voice-clone:Manage cloned voices'
+    'doctor:Check Canvas readiness'
     'update:Update the LightX2V CLI'
     'completion:Shell completion'
   )
@@ -99,9 +107,9 @@ _lightx2v() {{
   fi
   case $words[2] in
     run) _arguments '*: :(t2i/Qwen-Image-2512 t2v/Wan2.2_T2V_A14B_distilled i2v/Wan2.2_I2V_A14B_distilled)' ;;
-    workflow)
+    canvas|workflow)
       if (( CURRENT == 3 )); then
-        _values 'workflow command' list get inputs create run runs status stream outputs cancel cancel-node
+        _values 'canvas command' list get inputs create use capabilities nodes edit rename delete upload node connect disconnect reorder-inputs group text script quote run runs status stream outputs wait download operation cancel cancel-node
       fi
       ;;
     completion) _arguments '1: :(bash zsh)' ;;

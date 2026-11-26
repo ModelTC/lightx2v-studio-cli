@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -34,11 +35,22 @@ def load_config_file() -> dict:
     return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
 
 
+def write_private_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd, temp = tempfile.mkstemp(dir=path.parent, prefix=".login-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as output:
+            json.dump(payload, output, indent=2)
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temp, path)
+    finally:
+        Path(temp).unlink(missing_ok=True)
+
+
 def save_config_file(base_url: str, api_key: str) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    payload = {"base_url": base_url.rstrip("/"), "api_key": api_key}
-    CONFIG_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    CONFIG_PATH.chmod(0o600)
+    write_private_json(CONFIG_PATH, {"base_url": base_url.rstrip("/"), "api_key": api_key})
 
 
 def resolve_config() -> CliConfig:

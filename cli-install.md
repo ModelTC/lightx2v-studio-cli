@@ -1,5 +1,8 @@
 # LightX2V CLI install
 
+On a server with browser authorization enabled, CLI v0.3.3+ supports lightx2v login. In a headless environment, run lightx2v login --headless --json and show only the URL and short code. After the user approves, run lightx2v login --resume --json in the same environment and against the same origin. Exit code 3 means pending; follow retry_after. Run lightx2v models once connected. CLI credentials last 30 days and are revocable in API Keys. Use lightx2v login --api-key for manual entry.
+
+
 The CLI is published from this repo. **LightX2V-Deploy is internal and not required.**
 
 ## Prerequisites
@@ -62,3 +65,5 @@ lightx2v models
 eval "$(lightx2v completion bash)"
 eval "$(lightx2v completion zsh)"
 ```
+
+CLI 0.3.4 uses `lightx2v canvas` throughout help, completion and examples. The previous command spelling remains a hidden compatibility alias. API routes and response keys retain their existing protocol names.
